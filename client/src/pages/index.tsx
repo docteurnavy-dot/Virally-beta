@@ -215,8 +215,6 @@ export default function Index() {
             wireframe={false}
           />
         </ShaderGradientCanvas>
-        {/* Dark overlay for better readability */}
-        <div className="absolute inset-0 bg-black/50" />
       </div>
 
       <WorkspaceSidebar

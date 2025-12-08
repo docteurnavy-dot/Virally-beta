@@ -115,10 +115,8 @@ export function WorkspaceSidebar({
     <div 
       className="flex flex-col h-full w-[280px]"
       style={{
-        background: "rgba(15, 15, 18, 0.6)",
-        backdropFilter: "blur(40px)",
-        WebkitBackdropFilter: "blur(40px)",
-        borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+        background: "linear-gradient(180deg, #0F0F12 0%, #1A1A1F 100%)",
+        borderRight: "1px solid rgba(255, 255, 255, 0.05)",
       }}
     >
       {/* Header */}

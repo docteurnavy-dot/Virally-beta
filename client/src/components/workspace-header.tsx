@@ -50,10 +50,8 @@ export function WorkspaceHeader({
     <div 
       className="border-b"
       style={{
-        background: "rgba(15, 15, 18, 0.5)",
-        backdropFilter: "blur(40px)",
-        WebkitBackdropFilter: "blur(40px)",
-        borderColor: "rgba(255, 255, 255, 0.08)",
+        background: "#0A0A0D",
+        borderColor: "rgba(255, 255, 255, 0.05)",
       }}
     >
       {/* Workspace Info */}
