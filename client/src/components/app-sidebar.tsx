@@ -3,9 +3,7 @@ import {
   Home,
   Calendar,
   Lightbulb,
-  TrendingUp,
   Video,
-  BarChart3,
   Users,
   Settings,
   Zap,
@@ -29,10 +27,8 @@ type NavItem = {
 const navItems: NavItem[] = [
   { id: "home", label: "Inicio", icon: Home },
   { id: "calendar", label: "Calendario", icon: Calendar },
-  { id: "ideas", label: "Ideas", icon: Lightbulb, badge: 12 },
-  { id: "trends", label: "Tendencias", icon: TrendingUp },
+  { id: "ideas", label: "Ideas", icon: Lightbulb },
   { id: "scripts", label: "Guiones", icon: Video },
-  { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "team", label: "Equipo", icon: Users },
 ];
 

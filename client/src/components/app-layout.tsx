@@ -6,7 +6,6 @@ import { DashboardView } from "@/components/dashboard-view";
 import { CalendarView } from "@/components/calendar-view";
 import { IdeasView } from "@/components/ideas-view";
 import { ScriptsView } from "@/components/scripts-view";
-import { AnalyticsView } from "@/components/analytics-view";
 import { SettingsView } from "@/components/settings-view";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -75,13 +74,6 @@ export function AppLayout() {
       case "scripts":
         return (
           <ScriptsView
-            workspaceId={selectedWorkspaceId}
-            role={selectedWorkspace.role}
-          />
-        );
-      case "analytics":
-        return (
-          <AnalyticsView
             workspaceId={selectedWorkspaceId}
             role={selectedWorkspace.role}
           />

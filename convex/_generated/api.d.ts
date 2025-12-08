@@ -8,10 +8,12 @@
  * @module
  */
 
+import type * as ai from "../ai.js";
 import type * as analyticsData from "../analyticsData.js";
 import type * as auth from "../auth.js";
 import type * as calendar from "../calendar.js";
 import type * as chat from "../chat.js";
+import type * as emails from "../emails.js";
 import type * as http from "../http.js";
 import type * as ideas from "../ideas.js";
 import type * as lib_internal_schema from "../lib/internal_schema.js";
@@ -29,10 +31,12 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  ai: typeof ai;
   analyticsData: typeof analyticsData;
   auth: typeof auth;
   calendar: typeof calendar;
   chat: typeof chat;
+  emails: typeof emails;
   http: typeof http;
   ideas: typeof ideas;
   "lib/internal_schema": typeof lib_internal_schema;

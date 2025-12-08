@@ -4,57 +4,62 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Doc } from "@/convex/_generated/dataModel";
 import { motion } from "framer-motion";
 import {
-  Eye,
-  MessageSquare,
   Lightbulb,
-  Star,
-  TrendingUp,
-  ArrowUpRight,
+  FileText,
+  Calendar,
+  Clock,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { AIChat } from "@/components/ai-chat";
 
 interface DashboardViewProps {
   workspaceId: Id<"workspaces">;
   role: string;
 }
 
-const stats = [
-  {
-    id: "views",
-    label: "Total Views",
-    value: "124.5K",
-    change: "+12.5%",
-    icon: Eye,
-    color: "#3B82F6",
-  },
-  {
-    id: "engagement",
-    label: "Engagement Rate",
-    value: "8.2%",
-    change: "+2.1%",
-    icon: MessageSquare,
-    color: "#10B981",
-  },
-  {
-    id: "ideas",
-    label: "Ideas This Month",
-    value: "24",
-    change: "+8",
-    icon: Lightbulb,
-    color: "#F59E0B",
-  },
-  {
-    id: "viral",
-    label: "Viral Score Avg",
-    value: "87",
-    change: "+5",
-    icon: Star,
-    color: "#8B5CF6",
-  },
-];
-
 export function DashboardView({ workspaceId }: DashboardViewProps) {
   const ideas = useQuery(api.ideas.getIdeas, { workspaceId });
+  const scripts = useQuery(api.scripts.getScripts, { workspaceId });
+  const events = useQuery(api.calendar.getEvents, { workspaceId });
+
+  // Calculate real stats
+  const totalIdeas = ideas?.length || 0;
+  const totalScripts = scripts?.length || 0;
+  const upcomingEvents = events?.filter(e => new Date(e.date) >= new Date()).length || 0;
+  const completedScripts = scripts?.filter(s => s.status === "filmed").length || 0;
+
+  const stats = [
+    {
+      id: "ideas",
+      label: "Ideas",
+      value: totalIdeas.toString(),
+      icon: Lightbulb,
+      color: "#F59E0B",
+    },
+    {
+      id: "scripts",
+      label: "Guiones",
+      value: totalScripts.toString(),
+      icon: FileText,
+      color: "#8B5CF6",
+    },
+    {
+      id: "events",
+      label: "Eventos Próximos",
+      value: upcomingEvents.toString(),
+      icon: Calendar,
+      color: "#3B82F6",
+    },
+    {
+      id: "completed",
+      label: "Guiones Finalizados",
+      value: completedScripts.toString(),
+      icon: Clock,
+      color: "#10B981",
+    },
+  ];
 
   return (
     <ScrollArea className="flex-1 h-full">
@@ -103,16 +108,6 @@ export function DashboardView({ workspaceId }: DashboardViewProps) {
                       strokeWidth={2}
                     />
                   </div>
-                  <span
-                    className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg"
-                    style={{
-                      background: "rgba(16, 185, 129, 0.2)",
-                      color: "#10B981",
-                    }}
-                  >
-                    <ArrowUpRight className="size-3" />
-                    {stat.change}
-                  </span>
                 </div>
                 <p className="text-[28px] font-bold text-white mb-1">
                   {stat.value}
@@ -185,7 +180,7 @@ export function DashboardView({ workspaceId }: DashboardViewProps) {
             </div>
           </motion.div>
 
-          {/* Trending Panel */}
+          {/* Upcoming Events Panel */}
           <motion.div
             className="p-6 rounded-2xl"
             style={{
@@ -200,60 +195,65 @@ export function DashboardView({ workspaceId }: DashboardViewProps) {
           >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <TrendingUp className="size-4 text-[#8B5CF6]" />
+                <Calendar className="size-4 text-[#8B5CF6]" />
                 <h2 className="text-base font-semibold text-white">
-                  Tendencias
+                  Próximos Eventos
                 </h2>
               </div>
-              <button className="text-xs text-[#8B5CF6] hover:text-[#A78BFA] transition-colors">
-                Ver todas
-              </button>
             </div>
             <div className="space-y-3">
-              {trendingItems.map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  className="p-4 rounded-xl transition-all duration-300 cursor-pointer"
-                  style={{
-                    background: "rgba(255, 255, 255, 0.05)",
-                  }}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + index * 0.1 }}
-                  whileHover={{
-                    background: "rgba(255, 255, 255, 0.08)",
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-white">
-                      {item.title}
-                    </span>
-                    {item.isHot && (
-                      <span
-                        className="text-[10px] font-bold px-2 py-0.5 rounded"
-                        style={{
-                          background: "rgba(239, 68, 68, 0.2)",
-                          border: "1px solid rgba(239, 68, 68, 0.3)",
-                          color: "#EF4444",
-                        }}
-                      >
-                        HOT
+              {events
+                ?.filter((e) => new Date(e.date) >= new Date())
+                .slice(0, 4)
+                .map((event, index) => (
+                  <motion.div
+                    key={event._id}
+                    className="p-4 rounded-xl transition-all duration-300 cursor-pointer"
+                    style={{
+                      background: "rgba(255, 255, 255, 0.05)",
+                    }}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 + index * 0.1 }}
+                    whileHover={{
+                      background: "rgba(255, 255, 255, 0.08)",
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-white">
+                        {event.title}
                       </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-[#6B6B78]">
-                      🎯 {item.platform}
-                    </span>
-                    <span className="text-xs text-[#10B981]">
-                      +{item.growth}%
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-[#6B6B78]">
+                        📅 {format(new Date(event.date), "d MMM", { locale: es })}
+                      </span>
+                      <span className="text-xs text-[#8B5CF6]">
+                        {event.contentType}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              {(!events || events.filter((e) => new Date(e.date) >= new Date()).length === 0) && (
+                <p className="text-sm text-[#6B6B78] text-center py-8">
+                  No hay eventos próximos
+                </p>
+              )}
             </div>
           </motion.div>
         </div>
+
+        {/* AI Chat Section */}
+        <motion.div
+          className="mt-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+        >
+          <div className="h-[500px]">
+            <AIChat workspaceId={workspaceId} />
+          </div>
+        </motion.div>
       </div>
     </ScrollArea>
   );
@@ -333,34 +333,4 @@ function SourceBadge({
   );
 }
 
-// Mock trending data
-const trendingItems = [
-  {
-    id: "1",
-    title: "AI Productivity Tools",
-    platform: "TikTok",
-    growth: 234,
-    isHot: true,
-  },
-  {
-    id: "2",
-    title: "Morning Routines",
-    platform: "Instagram",
-    growth: 156,
-    isHot: true,
-  },
-  {
-    id: "3",
-    title: "Remote Work Tips",
-    platform: "LinkedIn",
-    growth: 89,
-    isHot: false,
-  },
-  {
-    id: "4",
-    title: "Minimalist Living",
-    platform: "YouTube",
-    growth: 67,
-    isHot: false,
-  },
-];
+
