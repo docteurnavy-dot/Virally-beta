@@ -176,4 +176,29 @@ export default defineSchema({
     .index("by_workspace", ["workspaceId"])
     .index("by_email", ["email"])
     .index("by_email_and_status", ["email", "status"]),
+
+  // Notifications - In-app notifications for users
+  notifications: defineTable({
+    userId: v.id("users"),
+    type: v.union(
+      v.literal("workspace_invitation"),
+      v.literal("invitation_accepted"),
+      v.literal("invitation_declined"),
+      v.literal("member_joined"),
+      v.literal("member_left"),
+      v.literal("content_published"),
+      v.literal("mention"),
+      v.literal("system")
+    ),
+    title: v.string(),
+    message: v.string(),
+    workspaceId: v.optional(v.id("workspaces")),
+    invitationId: v.optional(v.id("workspaceInvitations")),
+    fromUserId: v.optional(v.id("users")),
+    read: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_read", ["userId", "read"])
+    .index("by_user_and_time", ["userId", "createdAt"]),
 });

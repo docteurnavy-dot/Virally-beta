@@ -327,7 +327,9 @@ export const inviteToWorkspace = authenticatedMutation({
       }
     }
 
-    await ctx.db.insert("workspaceInvitations", {
+    const workspace = await ctx.db.get(args.workspaceId);
+    
+    const invitationId = await ctx.db.insert("workspaceInvitations", {
       workspaceId: args.workspaceId,
       email: args.email.toLowerCase(),
       role: args.role,
@@ -335,6 +337,21 @@ export const inviteToWorkspace = authenticatedMutation({
       status: "pending",
       createdAt: Date.now(),
     });
+
+    // If user exists, create a notification for them
+    if (existingUser) {
+      await ctx.db.insert("notifications", {
+        userId: existingUser._id,
+        type: "workspace_invitation",
+        title: "Nueva invitación",
+        message: `${ctx.user.name || ctx.user.email} te ha invitado a unirte a "${workspace?.name}"`,
+        workspaceId: args.workspaceId,
+        invitationId: invitationId,
+        fromUserId: ctx.user._id,
+        read: false,
+        createdAt: Date.now(),
+      });
+    }
 
     return null;
   },

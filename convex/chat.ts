@@ -29,6 +29,56 @@ export const getMessages = authenticatedQuery({
   },
 });
 
+// Get recent messages for AI context (used by ai_chat action)
+export const getRecentMessages = authenticatedQuery({
+  args: {
+    workspaceId: v.id("workspaces"),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(
+    v.object({
+      role: v.string(),
+      content: v.string(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 10;
+
+    const messages = await ctx.db
+      .query("chatMessages")
+      .withIndex("by_workspace_and_time", (q) =>
+        q.eq("workspaceId", args.workspaceId)
+      )
+      .order("desc")
+      .take(limit);
+
+    // Return in chronological order with just role and content
+    return messages.reverse().map((m) => ({
+      role: m.role as string,
+      content: m.content,
+    }));
+  },
+});
+
+// Save a message (used by ai_chat action)
+export const saveMessage = authenticatedMutation({
+  args: {
+    workspaceId: v.id("workspaces"),
+    role: v.union(v.literal("user"), v.literal("assistant")),
+    content: v.string(),
+  },
+  returns: v.id("chatMessages"),
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("chatMessages", {
+      workspaceId: args.workspaceId,
+      role: args.role,
+      content: args.content,
+      createdBy: ctx.user._id,
+      createdAt: Date.now(),
+    });
+  },
+});
+
 // Add a user message
 export const addUserMessage = authenticatedMutation({
   args: {

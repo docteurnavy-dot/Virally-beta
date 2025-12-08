@@ -18,6 +18,7 @@ import type * as http from "../http.js";
 import type * as ideas from "../ideas.js";
 import type * as lib_internal_schema from "../lib/internal_schema.js";
 import type * as lib_roles from "../lib/roles.js";
+import type * as notifications from "../notifications.js";
 import type * as rebolt from "../rebolt.js";
 import type * as router from "../router.js";
 import type * as scripts from "../scripts.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   ideas: typeof ideas;
   "lib/internal_schema": typeof lib_internal_schema;
   "lib/roles": typeof lib_roles;
+  notifications: typeof notifications;
   rebolt: typeof rebolt;
   router: typeof router;
   scripts: typeof scripts;
