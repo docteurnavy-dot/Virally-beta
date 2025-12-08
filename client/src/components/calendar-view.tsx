@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import {
   Plus,
   ChevronLeft,
@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
 import { motion } from "framer-motion";
+import { AIChat } from "./ai-chat";
 
 interface CalendarViewProps {
   workspaceId: Id<"workspaces">;
@@ -463,74 +464,18 @@ export function CalendarView({ workspaceId, role }: CalendarViewProps) {
       {/* Chat Panel */}
       {isChatOpen && (
         <motion.div 
-          className="w-96 flex flex-col"
-          style={{
-            background: "linear-gradient(180deg, rgba(15, 15, 18, 0.98) 0%, rgba(10, 10, 13, 0.95) 100%)",
-            borderLeft: "1px solid rgba(255, 255, 255, 0.06)",
-          }}
+          className="w-96 h-full"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div 
-            className="p-5"
-            style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.06)" }}
-          >
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-[#8B5CF6]" strokeWidth={2} />
-              <h3 className="text-sm font-semibold text-white">Asistente de Estrategia</h3>
-            </div>
-            <p className="text-xs text-white/40 mt-1">
-              Pega tu estrategia o genera una nueva
-            </p>
-          </div>
-          <ScrollArea className="flex-1 p-5">
-            <div className="space-y-4">
-              <div 
-                className="p-4 rounded-xl"
-                style={{
-                  background: "rgba(139, 92, 246, 0.08)",
-                  border: "1px solid rgba(139, 92, 246, 0.2)",
-                }}
-              >
-                <p className="text-sm text-white/70">
-                  👋 ¡Hola! Soy tu asistente de estrategia de contenido. Puedes:
-                </p>
-                <ul className="mt-3 space-y-2 text-sm text-white/50">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1 h-1 rounded-full bg-[#8B5CF6]" />
-                    Pegar una estrategia de Claude/GPT
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1 h-1 rounded-full bg-[#8B5CF6]" />
-                    Pedirme que genere una estrategia
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1 h-1 rounded-full bg-[#8B5CF6]" />
-                    Optimizar contenido existente
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </ScrollArea>
-          <div 
-            className="p-5"
-            style={{ borderTop: "1px solid rgba(255, 255, 255, 0.06)" }}
-          >
-            <Textarea
-              placeholder="Escribe tu mensaje o pega tu estrategia..."
-              className="bg-white/5 border-white/10 text-white placeholder:text-white/30 min-h-[80px] resize-none rounded-xl focus:border-[#8B5CF6]/50"
-            />
-            <Button 
-              className="w-full mt-3 h-10 rounded-xl font-medium"
-              style={{
-                background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
-              }}
-            >
-              <Sparkles className="size-4 mr-2" strokeWidth={2} />
-              Enviar
-            </Button>
-          </div>
+          <AIChat 
+            workspaceId={workspaceId} 
+            context="calendar"
+            onContentCreated={() => {
+              toast.success("¡Contenido creado! Revisa el calendario");
+            }}
+          />
         </motion.div>
       )}
 
