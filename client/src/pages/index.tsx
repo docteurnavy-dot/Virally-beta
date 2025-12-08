@@ -177,9 +177,9 @@ export default function Index() {
   };
 
   return (
-    <div className="flex h-screen relative overflow-hidden bg-black">
+    <div className="flex h-screen relative overflow-hidden">
       {/* Shader Gradient Background */}
-      <div className="fixed inset-0 -z-10">
+      <div className="fixed inset-0 z-0">
         <ShaderGradientCanvas
           style={{ position: "absolute", inset: 0 }}
           pixelDensity={1}
@@ -217,19 +217,24 @@ export default function Index() {
         </ShaderGradientCanvas>
       </div>
 
-      <WorkspaceSidebar
-        selectedWorkspaceId={selectedWorkspaceId}
-        onSelectWorkspace={setSelectedWorkspaceId}
-      />
-
-      {selectedWorkspaceId ? (
-        <WorkspacePage
-          workspaceId={selectedWorkspaceId}
-          onBack={() => setSelectedWorkspaceId(null)}
+      <div className="relative z-10 flex flex-1">
+        <WorkspaceSidebar
+          selectedWorkspaceId={selectedWorkspaceId}
+          onSelectWorkspace={setSelectedWorkspaceId}
         />
-      ) : (
-        <>
+
+        {selectedWorkspaceId ? (
+          <WorkspacePage
+            workspaceId={selectedWorkspaceId}
+            onBack={() => setSelectedWorkspaceId(null)}
+          />
+        ) : (
           <EmptyState onCreateWorkspace={() => setIsCreateOpen(true)} />
+        )}
+      </div>
+
+      {!selectedWorkspaceId && (
+        <>
 
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogContent 
