@@ -12,6 +12,29 @@ const attachmentValidator = v.object({
   base64_encoded_data: v.optional(v.string()),
 });
 
+// Helper to extract JSON from AI response
+function extractJSON(text: string): Record<string, unknown> | null {
+  // Try to find JSON in the response
+  const jsonPatterns = [
+    /```json\s*([\s\S]*?)\s*```/,  // ```json ... ```
+    /```\s*([\s\S]*?)\s*```/,       // ``` ... ```
+    /(\{[\s\S]*\})/,                // Raw JSON object
+  ];
+
+  for (const pattern of jsonPatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      try {
+        const jsonStr = match[1] || match[0];
+        return JSON.parse(jsonStr.trim());
+      } catch {
+        continue;
+      }
+    }
+  }
+  return null;
+}
+
 // Send a message to the AI and get a response with full context
 export const chat = action({
   args: {
@@ -55,52 +78,59 @@ export const chat = action({
       .map((m) => `${m.role === "user" ? "Usuario" : "Virally"}: ${m.content}`)
       .join("\n");
 
+    // Get current date for context
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+    const currentDay = today.getDate();
+
     // Context-specific instructions
     const contextInstructions: Record<string, string> = {
-      general: "Ayuda con cualquier tarea relacionada con creación de contenido.",
+      general: `Puedes ayudar con ideas, guiones y calendario.
+Si el usuario pide crear IDEAS, responde con: {"action": "create_ideas", "ideas": [...]}
+Si el usuario pide crear EVENTOS o programar contenido, responde con: {"action": "create_events", "events": [...]}
+Si el usuario pide crear GUIONES, responde con: {"action": "create_scripts", "scripts": [...]}`,
       calendar: `MODO CALENDARIO: El usuario quiere gestionar su calendario de contenido.
-Cuando el usuario pida crear eventos, DEBES responder con un JSON válido así:
-{"action": "create_events", "events": [{"title": "Título", "date": "YYYY-MM-DD", "type": "video|reel|tiktok|post|story|live", "description": "Descripción opcional"}]}
+Cuando el usuario pida crear eventos o programar contenido, responde ÚNICAMENTE con este JSON:
+{"action": "create_events", "events": [{"title": "Título descriptivo", "date": "YYYY-MM-DD", "type": "reel", "description": "Descripción"}]}
 
-Si el usuario sube un archivo (PDF, imagen, documento), extrae las fechas y eventos y créalos.
-Si dice "todo el mes de julio" o similar, genera eventos para ese período.`,
-      ideas: `MODO IDEAS: El usuario quiere gestionar ideas de contenido.
-Cuando el usuario pida crear ideas, DEBES responder con un JSON válido así:
-{"action": "create_ideas", "ideas": [{"title": "Título de la idea", "description": "Descripción detallada", "category": "video|reel|tiktok|post|story|live"}]}
+IMPORTANTE sobre fechas:
+- Hoy es ${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}
+- Si dicen "23 de diciembre", usa "${currentYear}-12-23"
+- Si dicen "para julio", genera eventos en "${currentYear}-07-XX"
+- Siempre usa formato YYYY-MM-DD`,
+      ideas: `MODO IDEAS: El usuario quiere crear ideas de contenido viral.
+Cuando el usuario pida crear ideas, responde ÚNICAMENTE con este JSON:
+{"action": "create_ideas", "ideas": [{"title": "Título viral de la idea", "description": "Descripción detallada con el concepto", "category": "reel"}]}
 
-Genera ideas virales y creativas basadas en el nicho del workspace.`,
+IMPORTANTE:
+- Genera ideas VIRALES y creativas para el nicho "${workspace.niche}"
+- Si mencionan una fecha (ej: "para el 23 de diciembre"), incluye esa fecha en el título o descripción
+- category puede ser: video, reel, tiktok, post, story, live`,
       scripts: `MODO GUIONES: El usuario quiere crear guiones para videos.
-Cuando el usuario pida crear guiones, DEBES responder con un JSON válido así:
-{"action": "create_scripts", "scripts": [{"title": "Título", "hook": "Hook inicial (primeros 3 segundos)", "content": "Contenido completo del guión", "cta": "Call to action final"}]}
-
-Crea guiones virales con hooks potentes y CTAs efectivos.`,
+Cuando el usuario pida crear guiones, responde ÚNICAMENTE con este JSON:
+{"action": "create_scripts", "scripts": [{"title": "Título", "hook": "Hook potente (primeros 3 segundos)", "content": "Guión completo", "cta": "Call to action"}]}`,
     };
 
-    const systemPrompt = `Eres Virally AI, un asistente experto en creación de contenido viral.
-Responde SIEMPRE en español. Sé conciso y práctico.
+    const systemPrompt = `Eres Virally AI, asistente experto en contenido viral. Responde en español.
 
-WORKSPACE ACTUAL:
-- Nombre: ${workspace.name}
-- Nicho: ${workspace.niche}
+WORKSPACE: ${workspace.name} | NICHO: ${workspace.niche}
+FECHA ACTUAL: ${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}
 
 CONTENIDO EXISTENTE:
-Ideas actuales:
-${ideasSummary}
-
-Guiones actuales:
-${scriptsSummary}
-
-Calendario:
-${eventsSummary}
+Ideas: ${ideasSummary}
+Guiones: ${scriptsSummary}
+Calendario: ${eventsSummary}
 
 ${contextInstructions[contextType]}
 
-IMPORTANTE: 
-- Si el usuario pide CREAR algo (eventos, ideas, guiones), responde SOLO con el JSON correspondiente.
-- Si el usuario hace una pregunta o pide ayuda, responde normalmente en texto.
-- Cuando crees contenido, hazlo relevante para el nicho "${workspace.niche}".
+REGLAS CRÍTICAS:
+1. Si el usuario pide CREAR algo (ideas, eventos, guiones), responde SOLO con el JSON correspondiente, sin texto adicional.
+2. NO incluyas explicaciones antes o después del JSON cuando crees contenido.
+3. Si el usuario hace una PREGUNTA o pide AYUDA, responde en texto normal.
+4. Cuando crees contenido, hazlo relevante para el nicho "${workspace.niche}".
 
-Historial reciente:
+Historial:
 ${conversationHistory}`;
 
     // Save user message
@@ -135,14 +165,14 @@ ${conversationHistory}`;
     const aiResponse = result.output.response;
 
     // Try to parse and execute actions from the response
-    try {
-      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        
-        if (parsed.action === "create_events" && parsed.events) {
+    const parsed = extractJSON(aiResponse);
+    
+    if (parsed && parsed.action) {
+      try {
+        if (parsed.action === "create_events" && Array.isArray(parsed.events)) {
           let createdCount = 0;
-          for (const event of parsed.events) {
+          for (const event of parsed.events as Array<{title?: string; date?: string; type?: string; description?: string}>) {
+            if (!event.title || !event.date) continue;
             await ctx.runMutation(api.calendar.createEvent, {
               workspaceId: args.workspaceId,
               title: event.title,
@@ -154,17 +184,20 @@ ${conversationHistory}`;
             });
             createdCount++;
           }
-          const successMsg = `✅ He creado ${createdCount} evento(s) en tu calendario. ¡Revísalos en la pestaña Calendario!`;
-          await ctx.runMutation(api.chat.addAssistantMessage, {
-            workspaceId: args.workspaceId,
-            content: successMsg,
-          });
-          return successMsg;
+          if (createdCount > 0) {
+            const successMsg = `✅ He creado ${createdCount} evento(s) en tu calendario. ¡Revísalos en la pestaña Calendario!`;
+            await ctx.runMutation(api.chat.addAssistantMessage, {
+              workspaceId: args.workspaceId,
+              content: successMsg,
+            });
+            return successMsg;
+          }
         }
         
-        if (parsed.action === "create_ideas" && parsed.ideas) {
+        if (parsed.action === "create_ideas" && Array.isArray(parsed.ideas)) {
           let createdCount = 0;
-          for (const idea of parsed.ideas) {
+          for (const idea of parsed.ideas as Array<{title?: string; description?: string; category?: string}>) {
+            if (!idea.title) continue;
             await ctx.runMutation(api.ideas.createIdea, {
               workspaceId: args.workspaceId,
               title: idea.title,
@@ -176,17 +209,20 @@ ${conversationHistory}`;
             });
             createdCount++;
           }
-          const successMsg = `✅ He creado ${createdCount} idea(s). ¡Revísalas en la pestaña Ideas!`;
-          await ctx.runMutation(api.chat.addAssistantMessage, {
-            workspaceId: args.workspaceId,
-            content: successMsg,
-          });
-          return successMsg;
+          if (createdCount > 0) {
+            const successMsg = `✅ He creado ${createdCount} idea(s). ¡Revísalas en la pestaña Ideas!`;
+            await ctx.runMutation(api.chat.addAssistantMessage, {
+              workspaceId: args.workspaceId,
+              content: successMsg,
+            });
+            return successMsg;
+          }
         }
         
-        if (parsed.action === "create_scripts" && parsed.scripts) {
+        if (parsed.action === "create_scripts" && Array.isArray(parsed.scripts)) {
           let createdCount = 0;
-          for (const script of parsed.scripts) {
+          for (const script of parsed.scripts as Array<{title?: string; hook?: string; content?: string; cta?: string}>) {
+            if (!script.title) continue;
             await ctx.runMutation(api.scripts.createScript, {
               workspaceId: args.workspaceId,
               title: script.title,
@@ -197,16 +233,19 @@ ${conversationHistory}`;
             });
             createdCount++;
           }
-          const successMsg = `✅ He creado ${createdCount} guión(es). ¡Revísalos en la pestaña Guiones!`;
-          await ctx.runMutation(api.chat.addAssistantMessage, {
-            workspaceId: args.workspaceId,
-            content: successMsg,
-          });
-          return successMsg;
+          if (createdCount > 0) {
+            const successMsg = `✅ He creado ${createdCount} guión(es). ¡Revísalos en la pestaña Guiones!`;
+            await ctx.runMutation(api.chat.addAssistantMessage, {
+              workspaceId: args.workspaceId,
+              content: successMsg,
+            });
+            return successMsg;
+          }
         }
+      } catch (error) {
+        console.error("Error processing AI action:", error);
+        // Fall through to save the raw response
       }
-    } catch {
-      // Not a JSON response or parsing failed, that's fine - it's a normal text response
     }
 
     // Save normal text response
