@@ -25,10 +25,7 @@ export function WorkspacePage({ workspaceId, onBack }: WorkspacePageProps) {
 
   if (workspace === undefined) {
     return (
-      <div 
-        className="flex-1 flex items-center justify-center"
-        style={{ background: "linear-gradient(180deg, #0A0A0D 0%, #0F0F12 100%)" }}
-      >
+      <div className="flex-1 flex items-center justify-center bg-transparent">
         <LoadingSpinner className="size-8" />
       </div>
     );
@@ -36,10 +33,7 @@ export function WorkspacePage({ workspaceId, onBack }: WorkspacePageProps) {
 
   if (workspace === null) {
     return (
-      <div 
-        className="flex-1 flex items-center justify-center"
-        style={{ background: "linear-gradient(180deg, #0A0A0D 0%, #0F0F12 100%)" }}
-      >
+      <div className="flex-1 flex items-center justify-center bg-transparent">
         <div className="text-center">
           <p className="text-white text-lg mb-4">Workspace no encontrado</p>
           <button
@@ -77,10 +71,7 @@ export function WorkspacePage({ workspaceId, onBack }: WorkspacePageProps) {
   };
 
   return (
-    <div 
-      className="flex-1 flex flex-col h-full overflow-hidden"
-      style={{ background: "linear-gradient(180deg, #0A0A0D 0%, #0F0F12 100%)" }}
-    >
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-transparent">
       <WorkspaceHeader
         workspace={workspace}
         activeTab={activeTab}
