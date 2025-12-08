@@ -29,27 +29,28 @@ import {
 } from "@/components/ui/card";
 import {
   Plus,
-  Lightbulb,
   TrendingUp,
   Flame,
   Leaf,
   XCircle,
   Trash2,
-  Edit2,
   Search,
-  Filter,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { motion } from "framer-motion";
 
 interface IdeasViewProps {
   workspaceId: Id<"workspaces">;
   role: string;
 }
 
-const viralPotentialConfig = {
+type ViralScoreType = "trending" | "viral" | "evergreen" | "not_relevant";
+type SourceType = "manual" | "competitor" | "trend" | "ai";
+
+const viralScoreConfig = {
   trending: {
     icon: TrendingUp,
     label: "Trending",
@@ -80,11 +81,11 @@ const viralPotentialConfig = {
   },
 };
 
-const statusConfig = {
-  new: { label: "Nueva", color: "bg-[#3B82F6]/20 text-[#3B82F6]" },
-  in_progress: { label: "En progreso", color: "bg-amber-500/20 text-amber-400" },
-  completed: { label: "Completada", color: "bg-emerald-500/20 text-emerald-400" },
-  archived: { label: "Archivada", color: "bg-[#27272A] text-[#A1A1AA]" },
+const sourceLabels: Record<SourceType, string> = {
+  manual: "Manual",
+  competitor: "Competidor",
+  trend: "Tendencia",
+  ai: "IA",
 };
 
 export function IdeasView({ workspaceId, role }: IdeasViewProps) {
@@ -92,8 +93,8 @@ export function IdeasView({ workspaceId, role }: IdeasViewProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingIdea, setEditingIdea] = useState<Doc<"ideas"> | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterPotential, setFilterPotential] = useState<string>("all");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterScore, setFilterScore] = useState<string>("all");
+  const [filterSource, setFilterSource] = useState<string>("all");
 
   const ideas = useQuery(api.ideas.getIdeas, { workspaceId });
   const createIdea = useMutation(api.ideas.createIdea);
@@ -103,9 +104,13 @@ export function IdeasView({ workspaceId, role }: IdeasViewProps) {
   const [newIdea, setNewIdea] = useState({
     title: "",
     description: "",
-    source: "",
-    viralPotential: "trending" as "trending" | "viral" | "evergreen" | "not_relevant",
-    tags: "",
+    source: "manual" as SourceType,
+    viralScore: "trending" as ViralScoreType,
+    contentType: "reel",
+    hooks: "",
+    competitorName: "",
+    competitorUrl: "",
+    notes: "",
   });
 
   const canEdit = role !== "viewer";
@@ -121,21 +126,29 @@ export function IdeasView({ workspaceId, role }: IdeasViewProps) {
       await createIdea({
         workspaceId,
         title: newIdea.title.trim(),
-        description: newIdea.description.trim() || undefined,
-        source: newIdea.source.trim() || undefined,
-        viralPotential: newIdea.viralPotential,
-        tags: newIdea.tags
+        description: newIdea.description.trim() || "",
+        source: newIdea.source,
+        viralScore: newIdea.viralScore,
+        contentType: newIdea.contentType,
+        hooks: newIdea.hooks
           .split(",")
           .map((t) => t.trim())
           .filter(Boolean),
+        competitorName: newIdea.competitorName.trim() || undefined,
+        competitorUrl: newIdea.competitorUrl.trim() || undefined,
+        notes: newIdea.notes.trim() || undefined,
       });
       toast.success("Idea creada");
       setNewIdea({
         title: "",
         description: "",
-        source: "",
-        viralPotential: "trending",
-        tags: "",
+        source: "manual",
+        viralScore: "trending",
+        contentType: "reel",
+        hooks: "",
+        competitorName: "",
+        competitorUrl: "",
+        notes: "",
       });
       setIsCreateOpen(false);
     } catch (error) {
@@ -153,9 +166,12 @@ export function IdeasView({ workspaceId, role }: IdeasViewProps) {
         title: editingIdea.title,
         description: editingIdea.description,
         source: editingIdea.source,
-        viralPotential: editingIdea.viralPotential,
-        status: editingIdea.status,
-        tags: editingIdea.tags,
+        viralScore: editingIdea.viralScore,
+        contentType: editingIdea.contentType,
+        hooks: editingIdea.hooks,
+        competitorName: editingIdea.competitorName,
+        competitorUrl: editingIdea.competitorUrl,
+        notes: editingIdea.notes,
       });
       toast.success("Idea actualizada");
       setIsEditOpen(false);
@@ -181,30 +197,35 @@ export function IdeasView({ workspaceId, role }: IdeasViewProps) {
     const matchesSearch =
       idea.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       idea.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPotential =
-      filterPotential === "all" || idea.viralPotential === filterPotential;
-    const matchesStatus =
-      filterStatus === "all" || idea.status === filterStatus;
-    return matchesSearch && matchesPotential && matchesStatus;
+    const matchesScore =
+      filterScore === "all" || idea.viralScore === filterScore;
+    const matchesSource =
+      filterSource === "all" || idea.source === filterSource;
+    return matchesSearch && matchesScore && matchesSource;
   });
 
-  // Group ideas by viral potential
+  // Group ideas by viral score
   const groupedIdeas = {
-    viral: filteredIdeas?.filter((i) => i.viralPotential === "viral") || [],
-    trending: filteredIdeas?.filter((i) => i.viralPotential === "trending") || [],
-    evergreen: filteredIdeas?.filter((i) => i.viralPotential === "evergreen") || [],
-    not_relevant: filteredIdeas?.filter((i) => i.viralPotential === "not_relevant") || [],
+    viral: filteredIdeas?.filter((i) => i.viralScore === "viral") || [],
+    trending: filteredIdeas?.filter((i) => i.viralScore === "trending") || [],
+    evergreen: filteredIdeas?.filter((i) => i.viralScore === "evergreen") || [],
+    not_relevant: filteredIdeas?.filter((i) => i.viralScore === "not_relevant") || [],
   };
 
   return (
-    <div className="p-6 h-full overflow-hidden flex flex-col">
+    <motion.div 
+      className="p-8 h-full overflow-hidden flex flex-col"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-2xl font-semibold text-white tracking-tight">
             Organizador de Ideas
           </h2>
-          <p className="text-sm text-[#A1A1AA] mt-1">
+          <p className="text-sm text-white/40 mt-1">
             Captura y clasifica ideas según su potencial viral
           </p>
         </div>
@@ -212,75 +233,113 @@ export function IdeasView({ workspaceId, role }: IdeasViewProps) {
         {canEdit && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED]">
-                <Plus className="size-4 mr-2" />
+              <Button 
+                className="rounded-xl h-10"
+                style={{
+                  background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+                }}
+              >
+                <Plus className="size-4 mr-2" strokeWidth={2} />
                 Nueva idea
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#18181B] border-[#27272A] max-w-md">
+            <DialogContent 
+              className="max-w-md border-0"
+              style={{
+                background: "rgba(30, 30, 35, 0.95)",
+                backdropFilter: "blur(40px)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: "24px",
+              }}
+            >
               <DialogHeader>
-                <DialogTitle className="text-white">Nueva idea</DialogTitle>
+                <DialogTitle className="text-white text-lg">Nueva idea</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleCreateIdea} className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-white">Título</Label>
+                  <Label className="text-white/70 text-sm">Título</Label>
                   <Input
                     placeholder="Título de la idea"
                     value={newIdea.title}
                     onChange={(e) => setNewIdea({ ...newIdea, title: e.target.value })}
-                    className="bg-[#27272A] border-[#3F3F46] text-white"
+                    className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-white">Descripción</Label>
+                  <Label className="text-white/70 text-sm">Descripción</Label>
                   <Textarea
                     placeholder="Describe la idea..."
                     value={newIdea.description}
                     onChange={(e) => setNewIdea({ ...newIdea, description: e.target.value })}
-                    className="bg-[#27272A] border-[#3F3F46] text-white min-h-[100px]"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 min-h-[100px] rounded-xl focus:border-[#8B5CF6]/50"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-white/70 text-sm">Fuente</Label>
+                    <Select
+                      value={newIdea.source}
+                      onValueChange={(v) => setNewIdea({ ...newIdea, source: v as SourceType })}
+                    >
+                      <SelectTrigger className="h-11 bg-white/5 border-white/10 text-white rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1E1E23] border-white/10 rounded-xl">
+                        <SelectItem value="manual">Manual</SelectItem>
+                        <SelectItem value="competitor">Competidor</SelectItem>
+                        <SelectItem value="trend">Tendencia</SelectItem>
+                        <SelectItem value="ai">IA</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70 text-sm">Potencial viral</Label>
+                    <Select
+                      value={newIdea.viralScore}
+                      onValueChange={(v) =>
+                        setNewIdea({
+                          ...newIdea,
+                          viralScore: v as ViralScoreType,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="h-11 bg-white/5 border-white/10 text-white rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1E1E23] border-white/10 rounded-xl">
+                        <SelectItem value="viral">🔥 Viral</SelectItem>
+                        <SelectItem value="trending">📈 Trending</SelectItem>
+                        <SelectItem value="evergreen">🌿 Evergreen</SelectItem>
+                        <SelectItem value="not_relevant">❌ No relevante</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label className="text-white">Fuente (opcional)</Label>
+                  <Label className="text-white/70 text-sm">Tipo de contenido</Label>
                   <Input
-                    placeholder="URL o referencia de donde vino la idea"
-                    value={newIdea.source}
-                    onChange={(e) => setNewIdea({ ...newIdea, source: e.target.value })}
-                    className="bg-[#27272A] border-[#3F3F46] text-white"
+                    placeholder="reel, carousel, story..."
+                    value={newIdea.contentType}
+                    onChange={(e) => setNewIdea({ ...newIdea, contentType: e.target.value })}
+                    className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-white">Potencial viral</Label>
-                  <Select
-                    value={newIdea.viralPotential}
-                    onValueChange={(v) =>
-                      setNewIdea({
-                        ...newIdea,
-                        viralPotential: v as "trending" | "viral" | "evergreen" | "not_relevant",
-                      })
-                    }
-                  >
-                    <SelectTrigger className="bg-[#27272A] border-[#3F3F46] text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#27272A] border-[#3F3F46]">
-                      <SelectItem value="viral">🔥 Viral</SelectItem>
-                      <SelectItem value="trending">📈 Trending</SelectItem>
-                      <SelectItem value="evergreen">🌿 Evergreen</SelectItem>
-                      <SelectItem value="not_relevant">❌ No relevante</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white">Tags (separados por coma)</Label>
+                  <Label className="text-white/70 text-sm">Hooks (separados por coma)</Label>
                   <Input
-                    placeholder="IA, marketing, viral..."
-                    value={newIdea.tags}
-                    onChange={(e) => setNewIdea({ ...newIdea, tags: e.target.value })}
-                    className="bg-[#27272A] border-[#3F3F46] text-white"
+                    placeholder="Hook 1, Hook 2..."
+                    value={newIdea.hooks}
+                    onChange={(e) => setNewIdea({ ...newIdea, hooks: e.target.value })}
+                    className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                   />
                 </div>
-                <Button type="submit" className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED]">
+                <Button 
+                  type="submit" 
+                  className="w-full h-11 rounded-xl font-medium"
+                  style={{
+                    background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+                  }}
+                >
                   Crear idea
                 </Button>
               </form>
@@ -292,19 +351,19 @@ export function IdeasView({ workspaceId, role }: IdeasViewProps) {
       {/* Filters */}
       <div className="flex items-center gap-4 mb-6">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#A1A1AA]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-white/40" strokeWidth={2} />
           <Input
             placeholder="Buscar ideas..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-[#18181B] border-[#27272A] text-white"
+            className="pl-10 h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
           />
         </div>
-        <Select value={filterPotential} onValueChange={setFilterPotential}>
-          <SelectTrigger className="w-40 bg-[#18181B] border-[#27272A] text-white">
+        <Select value={filterScore} onValueChange={setFilterScore}>
+          <SelectTrigger className="w-44 h-11 bg-white/5 border-white/10 text-white rounded-xl">
             <SelectValue placeholder="Potencial" />
           </SelectTrigger>
-          <SelectContent className="bg-[#27272A] border-[#3F3F46]">
+          <SelectContent className="bg-[#1E1E23] border-white/10 rounded-xl">
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="viral">🔥 Viral</SelectItem>
             <SelectItem value="trending">📈 Trending</SelectItem>
@@ -312,39 +371,39 @@ export function IdeasView({ workspaceId, role }: IdeasViewProps) {
             <SelectItem value="not_relevant">❌ No relevante</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-40 bg-[#18181B] border-[#27272A] text-white">
-            <SelectValue placeholder="Estado" />
+        <Select value={filterSource} onValueChange={setFilterSource}>
+          <SelectTrigger className="w-44 h-11 bg-white/5 border-white/10 text-white rounded-xl">
+            <SelectValue placeholder="Fuente" />
           </SelectTrigger>
-          <SelectContent className="bg-[#27272A] border-[#3F3F46]">
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="new">Nueva</SelectItem>
-            <SelectItem value="in_progress">En progreso</SelectItem>
-            <SelectItem value="completed">Completada</SelectItem>
-            <SelectItem value="archived">Archivada</SelectItem>
+          <SelectContent className="bg-[#1E1E23] border-white/10 rounded-xl">
+            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="manual">Manual</SelectItem>
+            <SelectItem value="competitor">Competidor</SelectItem>
+            <SelectItem value="trend">Tendencia</SelectItem>
+            <SelectItem value="ai">IA</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {/* Ideas Grid - Kanban style */}
       <ScrollArea className="flex-1">
-        <div className="grid grid-cols-4 gap-4 pb-6">
-          {(["viral", "trending", "evergreen", "not_relevant"] as const).map((potential) => {
-            const config = viralPotentialConfig[potential];
+        <div className="grid grid-cols-4 gap-5 pb-6">
+          {(["viral", "trending", "evergreen", "not_relevant"] as const).map((score) => {
+            const config = viralScoreConfig[score];
             const Icon = config.icon;
-            const columnIdeas = groupedIdeas[potential];
+            const columnIdeas = groupedIdeas[score];
 
             return (
-              <div key={potential} className="flex flex-col">
+              <div key={score} className="flex flex-col">
                 <div
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg mb-3",
+                    "flex items-center gap-2 px-4 py-2.5 rounded-xl mb-4",
                     config.bg,
                     config.border,
                     "border"
                   )}
                 >
-                  <Icon className={cn("size-4", config.color)} />
+                  <Icon className={cn("size-4", config.color)} strokeWidth={2} />
                   <span className={cn("text-sm font-medium", config.color)}>
                     {config.label}
                   </span>
@@ -380,26 +439,21 @@ export function IdeasView({ workspaceId, role }: IdeasViewProps) {
                           </p>
                         )}
                         <div className="flex items-center justify-between">
-                          <Badge
-                            className={cn(
-                              "text-[10px]",
-                              statusConfig[idea.status].color
-                            )}
-                          >
-                            {statusConfig[idea.status].label}
+                          <Badge className="text-[10px] bg-[#27272A] text-[#A1A1AA]">
+                            {sourceLabels[idea.source]}
                           </Badge>
                           <span className="text-[10px] text-[#A1A1AA]">
                             {format(idea.createdAt, "d MMM", { locale: es })}
                           </span>
                         </div>
-                        {idea.tags && idea.tags.length > 0 && (
+                        {idea.hooks && idea.hooks.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
-                            {idea.tags.slice(0, 3).map((tag) => (
+                            {idea.hooks.slice(0, 3).map((hook, idx) => (
                               <span
-                                key={tag}
+                                key={idx}
                                 className="text-[10px] px-1.5 py-0.5 rounded bg-[#27272A] text-[#A1A1AA]"
                               >
-                                {tag}
+                                {hook}
                               </span>
                             ))}
                           </div>
@@ -451,11 +505,11 @@ export function IdeasView({ workspaceId, role }: IdeasViewProps) {
                 <div className="space-y-2">
                   <Label className="text-white">Potencial viral</Label>
                   <Select
-                    value={editingIdea.viralPotential}
+                    value={editingIdea.viralScore}
                     onValueChange={(v) =>
                       setEditingIdea({
                         ...editingIdea,
-                        viralPotential: v as "trending" | "viral" | "evergreen" | "not_relevant",
+                        viralScore: v as ViralScoreType,
                       })
                     }
                     disabled={!canEdit}
@@ -472,13 +526,13 @@ export function IdeasView({ workspaceId, role }: IdeasViewProps) {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-white">Estado</Label>
+                  <Label className="text-white">Fuente</Label>
                   <Select
-                    value={editingIdea.status}
+                    value={editingIdea.source}
                     onValueChange={(v) =>
                       setEditingIdea({
                         ...editingIdea,
-                        status: v as "new" | "in_progress" | "completed" | "archived",
+                        source: v as SourceType,
                       })
                     }
                     disabled={!canEdit}
@@ -487,21 +541,34 @@ export function IdeasView({ workspaceId, role }: IdeasViewProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-[#27272A] border-[#3F3F46]">
-                      <SelectItem value="new">Nueva</SelectItem>
-                      <SelectItem value="in_progress">En progreso</SelectItem>
-                      <SelectItem value="completed">Completada</SelectItem>
-                      <SelectItem value="archived">Archivada</SelectItem>
+                      <SelectItem value="manual">Manual</SelectItem>
+                      <SelectItem value="competitor">Competidor</SelectItem>
+                      <SelectItem value="trend">Tendencia</SelectItem>
+                      <SelectItem value="ai">IA</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-white">Fuente</Label>
+                <Label className="text-white">Tipo de contenido</Label>
                 <Input
-                  value={editingIdea.source || ""}
-                  onChange={(e) => setEditingIdea({ ...editingIdea, source: e.target.value })}
+                  value={editingIdea.contentType || ""}
+                  onChange={(e) => setEditingIdea({ ...editingIdea, contentType: e.target.value })}
                   className="bg-[#27272A] border-[#3F3F46] text-white"
                   disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-white">Hooks</Label>
+                <Input
+                  value={editingIdea.hooks?.join(", ") || ""}
+                  onChange={(e) => setEditingIdea({ 
+                    ...editingIdea, 
+                    hooks: e.target.value.split(",").map(h => h.trim()).filter(Boolean) 
+                  })}
+                  className="bg-[#27272A] border-[#3F3F46] text-white"
+                  disabled={!canEdit}
+                  placeholder="Hook 1, Hook 2..."
                 />
               </div>
               {canEdit && (
@@ -522,6 +589,6 @@ export function IdeasView({ workspaceId, role }: IdeasViewProps) {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   );
 }

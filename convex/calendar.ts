@@ -14,7 +14,7 @@ export const getEvents = authenticatedQuery({
   handler: async (ctx, args) => {
     await checkWorkspaceAccess(ctx, args.workspaceId, ctx.user._id);
 
-    let query = ctx.db
+    const query = ctx.db
       .query("calendarEvents")
       .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId));
 

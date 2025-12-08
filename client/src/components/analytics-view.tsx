@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Id, Doc } from "@/convex/_generated/dataModel";
+import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -33,19 +33,13 @@ import {
   Heart,
   MessageCircle,
   Share2,
-  TrendingUp,
-  TrendingDown,
-  Minus,
   BarChart3,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -78,6 +72,8 @@ const platformLabels: Record<string, string> = {
   other: "Otro",
 };
 
+type PlatformType = "instagram" | "tiktok" | "youtube" | "twitter" | "linkedin" | "other";
+
 export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
@@ -89,28 +85,27 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
     workspaceId,
     startDate,
     endDate,
-    platform: selectedPlatform === "all" ? undefined : selectedPlatform,
+    platform: selectedPlatform === "all" ? undefined : selectedPlatform as PlatformType,
   });
 
-  const summary = useQuery(api.analyticsData.getSummary, {
+  const summary = useQuery(api.analyticsData.getAnalyticsSummary, {
     workspaceId,
     startDate,
     endDate,
   });
 
-  const trends = useQuery(api.analyticsData.getTrends, {
+  const trends = useQuery(api.analyticsData.getAnalyticsTrend, {
     workspaceId,
-    startDate,
-    endDate,
+    days: 30,
   });
 
-  const createAnalytics = useMutation(api.analyticsData.createAnalytics);
-  const deleteAnalytics = useMutation(api.analyticsData.deleteAnalytics);
+  const createAnalytics = useMutation(api.analyticsData.createAnalyticsEntry);
+  const deleteAnalytics = useMutation(api.analyticsData.deleteAnalyticsEntry);
 
   const [newEntry, setNewEntry] = useState({
     contentTitle: "",
-    platform: "instagram",
-    date: format(new Date(), "yyyy-MM-dd"),
+    platform: "instagram" as PlatformType,
+    publishedDate: format(new Date(), "yyyy-MM-dd"),
     views: "",
     likes: "",
     comments: "",
@@ -122,7 +117,7 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
 
   const handleCreateEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEntry.contentTitle.trim() || !newEntry.date) {
+    if (!newEntry.contentTitle.trim() || !newEntry.publishedDate) {
       toast.error("Título y fecha son requeridos");
       return;
     }
@@ -131,19 +126,19 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
       await createAnalytics({
         workspaceId,
         contentTitle: newEntry.contentTitle.trim(),
-        platform: newEntry.platform as "instagram" | "tiktok" | "youtube" | "twitter" | "linkedin" | "other",
-        date: newEntry.date,
-        views: newEntry.views ? parseInt(newEntry.views) : undefined,
-        likes: newEntry.likes ? parseInt(newEntry.likes) : undefined,
-        comments: newEntry.comments ? parseInt(newEntry.comments) : undefined,
-        shares: newEntry.shares ? parseInt(newEntry.shares) : undefined,
+        platform: newEntry.platform,
+        publishedDate: newEntry.publishedDate,
+        views: newEntry.views ? parseInt(newEntry.views) : 0,
+        likes: newEntry.likes ? parseInt(newEntry.likes) : 0,
+        comments: newEntry.comments ? parseInt(newEntry.comments) : 0,
+        shares: newEntry.shares ? parseInt(newEntry.shares) : 0,
         contentUrl: newEntry.contentUrl.trim() || undefined,
       });
       toast.success("Métricas guardadas");
       setNewEntry({
         contentTitle: "",
         platform: "instagram",
-        date: format(new Date(), "yyyy-MM-dd"),
+        publishedDate: format(new Date(), "yyyy-MM-dd"),
         views: "",
         likes: "",
         comments: "",
@@ -156,9 +151,9 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
     }
   };
 
-  const handleDeleteEntry = async (analyticsId: Id<"analytics">) => {
+  const handleDeleteEntry = async (entryId: Id<"analytics">) => {
     try {
-      await deleteAnalytics({ analyticsId });
+      await deleteAnalytics({ entryId });
       toast.success("Entrada eliminada");
     } catch (error) {
       toast.error("Error al eliminar entrada");
@@ -171,17 +166,6 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
     return num.toString();
   };
 
-  const getTrendIcon = (trend: "up" | "down" | "stable") => {
-    switch (trend) {
-      case "up":
-        return <TrendingUp className="size-4 text-emerald-400" />;
-      case "down":
-        return <TrendingDown className="size-4 text-rose-400" />;
-      default:
-        return <Minus className="size-4 text-[#A1A1AA]" />;
-    }
-  };
-
   // Prepare chart data
   const chartData = trends?.map((t) => ({
     date: format(new Date(t.date), "d MMM", { locale: es }),
@@ -192,24 +176,24 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
   })) || [];
 
   return (
-    <div className="p-6 h-full overflow-hidden flex flex-col">
+    <div className="p-8 h-full overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-2xl font-semibold text-white tracking-tight">
             Analytics Dashboard
           </h2>
-          <p className="text-sm text-[#A1A1AA] mt-1">
+          <p className="text-sm text-white/40 mt-1">
             Últimos 30 días de rendimiento
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
-            <SelectTrigger className="w-40 bg-[#18181B] border-[#27272A] text-white">
+            <SelectTrigger className="w-40 h-10 bg-white/5 border-white/10 text-white rounded-xl">
               <SelectValue placeholder="Plataforma" />
             </SelectTrigger>
-            <SelectContent className="bg-[#27272A] border-[#3F3F46]">
+            <SelectContent className="bg-[#1E1E23] border-white/10 rounded-xl">
               <SelectItem value="all">Todas</SelectItem>
               <SelectItem value="instagram">Instagram</SelectItem>
               <SelectItem value="tiktok">TikTok</SelectItem>
@@ -223,37 +207,50 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
           {canEdit && (
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED]">
-                  <Plus className="size-4 mr-2" />
+                <Button 
+                  className="rounded-xl h-10"
+                  style={{
+                    background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+                  }}
+                >
+                  <Plus className="size-4 mr-2" strokeWidth={2} />
                   Añadir métricas
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-[#18181B] border-[#27272A] max-w-md">
+              <DialogContent 
+                className="max-w-md border-0"
+                style={{
+                  background: "rgba(30, 30, 35, 0.95)",
+                  backdropFilter: "blur(40px)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: "24px",
+                }}
+              >
                 <DialogHeader>
-                  <DialogTitle className="text-white">Añadir métricas de contenido</DialogTitle>
+                  <DialogTitle className="text-white text-lg">Añadir métricas de contenido</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleCreateEntry} className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-white">Título del contenido</Label>
+                    <Label className="text-white/70 text-sm">Título del contenido</Label>
                     <Input
                       placeholder="Ej: Reel sobre IA generativa"
                       value={newEntry.contentTitle}
                       onChange={(e) => setNewEntry({ ...newEntry, contentTitle: e.target.value })}
-                      className="bg-[#27272A] border-[#3F3F46] text-white"
+                      className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-white">Plataforma</Label>
+                      <Label className="text-white/70 text-sm">Plataforma</Label>
                       <Select
                         value={newEntry.platform}
-                        onValueChange={(v) => setNewEntry({ ...newEntry, platform: v })}
+                        onValueChange={(v) => setNewEntry({ ...newEntry, platform: v as PlatformType })}
                       >
-                        <SelectTrigger className="bg-[#27272A] border-[#3F3F46] text-white">
+                        <SelectTrigger className="h-11 bg-white/5 border-white/10 text-white rounded-xl">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#27272A] border-[#3F3F46]">
+                        <SelectContent className="bg-[#1E1E23] border-white/10 rounded-xl">
                           <SelectItem value="instagram">Instagram</SelectItem>
                           <SelectItem value="tiktok">TikTok</SelectItem>
                           <SelectItem value="youtube">YouTube</SelectItem>
@@ -264,19 +261,19 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-white">Fecha</Label>
+                      <Label className="text-white/70 text-sm">Fecha</Label>
                       <Input
                         type="date"
-                        value={newEntry.date}
-                        onChange={(e) => setNewEntry({ ...newEntry, date: e.target.value })}
-                        className="bg-[#27272A] border-[#3F3F46] text-white"
+                        value={newEntry.publishedDate}
+                        onChange={(e) => setNewEntry({ ...newEntry, publishedDate: e.target.value })}
+                        className="h-11 bg-white/5 border-white/10 text-white rounded-xl focus:border-[#8B5CF6]/50"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-white flex items-center gap-2">
+                      <Label className="text-white/70 text-sm flex items-center gap-2">
                         <Eye className="size-4 text-[#8B5CF6]" />
                         Views
                       </Label>
@@ -285,11 +282,11 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
                         placeholder="0"
                         value={newEntry.views}
                         onChange={(e) => setNewEntry({ ...newEntry, views: e.target.value })}
-                        className="bg-[#27272A] border-[#3F3F46] text-white"
+                        className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-white flex items-center gap-2">
+                      <Label className="text-white/70 text-sm flex items-center gap-2">
                         <Heart className="size-4 text-rose-400" />
                         Likes
                       </Label>
@@ -298,14 +295,14 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
                         placeholder="0"
                         value={newEntry.likes}
                         onChange={(e) => setNewEntry({ ...newEntry, likes: e.target.value })}
-                        className="bg-[#27272A] border-[#3F3F46] text-white"
+                        className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-white flex items-center gap-2">
+                      <Label className="text-white/70 text-sm flex items-center gap-2">
                         <MessageCircle className="size-4 text-[#3B82F6]" />
                         Comentarios
                       </Label>
@@ -314,11 +311,11 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
                         placeholder="0"
                         value={newEntry.comments}
                         onChange={(e) => setNewEntry({ ...newEntry, comments: e.target.value })}
-                        className="bg-[#27272A] border-[#3F3F46] text-white"
+                        className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-white flex items-center gap-2">
+                      <Label className="text-white/70 text-sm flex items-center gap-2">
                         <Share2 className="size-4 text-emerald-400" />
                         Shares
                       </Label>
@@ -327,22 +324,28 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
                         placeholder="0"
                         value={newEntry.shares}
                         onChange={(e) => setNewEntry({ ...newEntry, shares: e.target.value })}
-                        className="bg-[#27272A] border-[#3F3F46] text-white"
+                        className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-white">URL del contenido (opcional)</Label>
+                    <Label className="text-white/70 text-sm">URL del contenido (opcional)</Label>
                     <Input
                       placeholder="https://..."
                       value={newEntry.contentUrl}
                       onChange={(e) => setNewEntry({ ...newEntry, contentUrl: e.target.value })}
-                      className="bg-[#27272A] border-[#3F3F46] text-white"
+                      className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                     />
                   </div>
 
-                  <Button type="submit" className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED]">
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 rounded-xl font-medium"
+                    style={{
+                      background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+                    }}
+                  >
                     Guardar métricas
                   </Button>
                 </form>
@@ -356,82 +359,96 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
         <div className="space-y-6 pb-6">
           {/* Summary Cards */}
           <div className="grid grid-cols-4 gap-4">
-            <Card className="bg-[#18181B] border-[#27272A]">
-              <CardContent className="p-4">
+            <Card 
+              className="border-0"
+              style={{
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.06)",
+              }}
+            >
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-[#A1A1AA] mb-1">Total Views</p>
+                    <p className="text-xs text-white/40 mb-1">Total Views</p>
                     <p className="text-2xl font-semibold text-white">
-                      {formatNumber(summary?.totalViews || 0)}
+                      {formatNumber(summary?.totals?.views || 0)}
                     </p>
                   </div>
-                  <div className="h-10 w-10 rounded-lg bg-[#8B5CF6]/20 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-xl bg-[#8B5CF6]/20 flex items-center justify-center">
                     <Eye className="size-5 text-[#8B5CF6]" />
                   </div>
                 </div>
                 <div className="flex items-center gap-1 mt-2">
-                  {getTrendIcon(summary?.viewsTrend || "stable")}
-                  <span className="text-xs text-[#A1A1AA]">vs periodo anterior</span>
+                  <span className="text-xs text-white/40">{summary?.totalPosts || 0} publicaciones</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-[#18181B] border-[#27272A]">
-              <CardContent className="p-4">
+            <Card 
+              className="border-0"
+              style={{
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.06)",
+              }}
+            >
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-[#A1A1AA] mb-1">Total Likes</p>
+                    <p className="text-xs text-white/40 mb-1">Total Likes</p>
                     <p className="text-2xl font-semibold text-white">
-                      {formatNumber(summary?.totalLikes || 0)}
+                      {formatNumber(summary?.totals?.likes || 0)}
                     </p>
                   </div>
-                  <div className="h-10 w-10 rounded-lg bg-rose-500/20 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-xl bg-rose-500/20 flex items-center justify-center">
                     <Heart className="size-5 text-rose-400" />
                   </div>
                 </div>
                 <div className="flex items-center gap-1 mt-2">
-                  {getTrendIcon(summary?.likesTrend || "stable")}
-                  <span className="text-xs text-[#A1A1AA]">vs periodo anterior</span>
+                  <span className="text-xs text-white/40">Engagement: {summary?.engagementRate || 0}%</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-[#18181B] border-[#27272A]">
-              <CardContent className="p-4">
+            <Card 
+              className="border-0"
+              style={{
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.06)",
+              }}
+            >
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-[#A1A1AA] mb-1">Comentarios</p>
+                    <p className="text-xs text-white/40 mb-1">Comentarios</p>
                     <p className="text-2xl font-semibold text-white">
-                      {formatNumber(summary?.totalComments || 0)}
+                      {formatNumber(summary?.totals?.comments || 0)}
                     </p>
                   </div>
-                  <div className="h-10 w-10 rounded-lg bg-[#3B82F6]/20 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-xl bg-[#3B82F6]/20 flex items-center justify-center">
                     <MessageCircle className="size-5 text-[#3B82F6]" />
                   </div>
                 </div>
-                <div className="flex items-center gap-1 mt-2">
-                  {getTrendIcon(summary?.commentsTrend || "stable")}
-                  <span className="text-xs text-[#A1A1AA]">vs periodo anterior</span>
-                </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-[#18181B] border-[#27272A]">
-              <CardContent className="p-4">
+            <Card 
+              className="border-0"
+              style={{
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.06)",
+              }}
+            >
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-[#A1A1AA] mb-1">Shares</p>
+                    <p className="text-xs text-white/40 mb-1">Shares</p>
                     <p className="text-2xl font-semibold text-white">
-                      {formatNumber(summary?.totalShares || 0)}
+                      {formatNumber(summary?.totals?.shares || 0)}
                     </p>
                   </div>
-                  <div className="h-10 w-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
                     <Share2 className="size-5 text-emerald-400" />
                   </div>
-                </div>
-                <div className="flex items-center gap-1 mt-2">
-                  {getTrendIcon(summary?.sharesTrend || "stable")}
-                  <span className="text-xs text-[#A1A1AA]">vs periodo anterior</span>
                 </div>
               </CardContent>
             </Card>
@@ -439,7 +456,13 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
 
           {/* Chart */}
           {chartData.length > 0 && (
-            <Card className="bg-[#18181B] border-[#27272A]">
+            <Card 
+              className="border-0"
+              style={{
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.06)",
+              }}
+            >
               <CardHeader className="pb-2">
                 <CardTitle className="text-white text-base">Tendencia de Views</CardTitle>
               </CardHeader>
@@ -453,8 +476,8 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
                           <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
-                      <XAxis dataKey="date" stroke="#A1A1AA" fontSize={12} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                      <XAxis dataKey="date" stroke="rgba(255,255,255,0.4)" fontSize={12} />
                       <YAxis stroke="#A1A1AA" fontSize={12} />
                       <Tooltip
                         contentStyle={{
@@ -508,7 +531,7 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
                             {platformLabels[entry.platform]}
                           </Badge>
                           <span className="text-xs text-[#A1A1AA]">
-                            {format(new Date(entry.date), "d MMM", { locale: es })}
+                            {format(new Date(entry.publishedDate), "d MMM", { locale: es })}
                           </span>
                         </div>
                       </div>
@@ -518,19 +541,19 @@ export function AnalyticsView({ workspaceId, role }: AnalyticsViewProps) {
                       <div className="flex items-center gap-4 text-sm">
                         <div className="flex items-center gap-1 text-[#A1A1AA]">
                           <Eye className="size-3" />
-                          <span>{formatNumber(entry.views || 0)}</span>
+                          <span>{formatNumber(entry.views)}</span>
                         </div>
                         <div className="flex items-center gap-1 text-[#A1A1AA]">
                           <Heart className="size-3" />
-                          <span>{formatNumber(entry.likes || 0)}</span>
+                          <span>{formatNumber(entry.likes)}</span>
                         </div>
                         <div className="flex items-center gap-1 text-[#A1A1AA]">
                           <MessageCircle className="size-3" />
-                          <span>{formatNumber(entry.comments || 0)}</span>
+                          <span>{formatNumber(entry.comments)}</span>
                         </div>
                         <div className="flex items-center gap-1 text-[#A1A1AA]">
                           <Share2 className="size-3" />
-                          <span>{formatNumber(entry.shares || 0)}</span>
+                          <span>{formatNumber(entry.shares)}</span>
                         </div>
                       </div>
 

@@ -74,11 +74,17 @@ interface StatsCardProps {
 
 function StatsCard({ title, value, icon, className }: StatsCardProps) {
   return (
-    <div className="rounded-xl p-6 border">
+    <div 
+      className="rounded-xl p-6"
+      style={{
+        background: "rgba(255, 255, 255, 0.03)",
+        border: "1px solid rgba(255, 255, 255, 0.06)",
+      }}
+    >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-muted-foreground">{title}</p>
-          <p className="mt-2 text-3xl font-medium text-foreground">{value}</p>
+          <p className="text-white/50">{title}</p>
+          <p className="mt-2 text-3xl font-medium text-white">{value}</p>
         </div>
         {icon && <div className={cn("p-2 rounded-lg", className)}>{icon}</div>}
       </div>
@@ -449,20 +455,24 @@ export default function AdminPage() {
   if (roleStats.isError || currentUser.isError || searchResults.isError) {
     return (
       <Layout>
-        <div className="min-h-screen bg-gray-50/50 flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-foreground mb-2">
-              Error Loading Data
+            <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <h2 className="text-lg font-semibold text-white mb-2">
+              Error al cargar datos
             </h2>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-white/50 mb-4">
               {roleStats.error?.message ||
                 currentUser.error?.message ||
                 searchResults.error?.message ||
-                "An error occurred while loading the admin panel"}
+                "Ocurrió un error al cargar el panel de admin"}
             </p>
-            <Button onClick={() => window.location.reload()} variant="outline">
-              Retry
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="outline"
+              className="border-white/10 text-white hover:bg-white/5"
+            >
+              Reintentar
             </Button>
           </div>
         </div>
@@ -475,11 +485,11 @@ export default function AdminPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 pb-24">
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-2xl font-medium text-foreground tracking-tight">
-            User Management
+          <h1 className="text-2xl font-semibold text-white tracking-tight">
+            Gestión de Usuarios
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage user accounts and permissions
+          <p className="mt-1 text-sm text-white/40">
+            Administra cuentas y permisos
           </p>
         </div>
 

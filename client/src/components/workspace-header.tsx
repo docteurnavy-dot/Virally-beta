@@ -19,6 +19,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 type TabType = "calendar" | "ideas" | "scripts" | "analytics" | "settings";
 
@@ -30,11 +31,11 @@ interface WorkspaceHeaderProps {
 }
 
 const tabs = [
-  { id: "calendar" as const, label: "Calendario", icon: Calendar },
-  { id: "ideas" as const, label: "Ideas", icon: Lightbulb },
-  { id: "scripts" as const, label: "Guiones", icon: FileText },
-  { id: "analytics" as const, label: "Analytics", icon: BarChart3 },
-  { id: "settings" as const, label: "Ajustes", icon: Settings },
+  { id: "calendar" as const, label: "Calendario", icon: Calendar, color: "#8B5CF6" },
+  { id: "ideas" as const, label: "Ideas", icon: Lightbulb, color: "#F59E0B" },
+  { id: "scripts" as const, label: "Guiones", icon: FileText, color: "#10B981" },
+  { id: "analytics" as const, label: "Analytics", icon: BarChart3, color: "#3B82F6" },
+  { id: "settings" as const, label: "Ajustes", icon: Settings, color: "#71717A" },
 ];
 
 export function WorkspaceHeader({
@@ -46,9 +47,15 @@ export function WorkspaceHeader({
   const isOwner = workspace.role === "owner";
 
   return (
-    <div className="border-b border-[#27272A] bg-[#0A0A0A]">
+    <div 
+      className="border-b"
+      style={{
+        background: "linear-gradient(180deg, rgba(15, 15, 18, 0.98) 0%, rgba(10, 10, 13, 0.95) 100%)",
+        borderColor: "rgba(255, 255, 255, 0.06)",
+      }}
+    >
       {/* Workspace Info */}
-      <div className="px-6 py-4 flex items-center justify-between">
+      <div className="px-8 py-5 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
             <div className="flex items-center gap-3">
@@ -58,10 +65,12 @@ export function WorkspaceHeader({
               <Badge
                 variant="outline"
                 className={cn(
-                  "text-xs",
+                  "text-[11px] font-medium rounded-lg px-2.5 py-0.5 border",
                   isOwner
-                    ? "border-[#8B5CF6]/50 text-[#8B5CF6] bg-[#8B5CF6]/10"
-                    : "border-[#3B82F6]/50 text-[#3B82F6] bg-[#3B82F6]/10"
+                    ? "border-[#8B5CF6]/30 text-[#A78BFA] bg-[#8B5CF6]/10"
+                    : workspace.role === "editor"
+                      ? "border-[#3B82F6]/30 text-[#60A5FA] bg-[#3B82F6]/10"
+                      : "border-white/10 text-white/50 bg-white/5"
                 )}
               >
                 {workspace.role === "owner"
@@ -71,14 +80,20 @@ export function WorkspaceHeader({
                     : "Viewer"}
               </Badge>
             </div>
-            <p className="text-sm text-[#A1A1AA] mt-0.5">{workspace.niche}</p>
+            <p className="text-sm text-white/40 mt-1">{workspace.niche}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-sm text-[#A1A1AA]">
-            <Users className="size-4" />
-            <span>{workspace.memberCount} miembro{workspace.memberCount !== 1 ? "s" : ""}</span>
+        <div className="flex items-center gap-4">
+          <div 
+            className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg"
+            style={{
+              background: "rgba(255, 255, 255, 0.03)",
+              border: "1px solid rgba(255, 255, 255, 0.06)",
+            }}
+          >
+            <Users className="size-4 text-white/40" strokeWidth={2} />
+            <span className="text-white/60">{workspace.memberCount} miembro{workspace.memberCount !== 1 ? "s" : ""}</span>
           </div>
 
           {isOwner && (
@@ -87,28 +102,34 @@ export function WorkspaceHeader({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-[#A1A1AA] hover:text-white hover:bg-[#27272A]"
+                  className="text-white/40 hover:text-white hover:bg-white/5 rounded-xl h-9 w-9"
                 >
-                  <MoreVertical className="size-4" />
+                  <MoreVertical className="size-4" strokeWidth={2} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="bg-[#18181B] border-[#27272A]"
+                className="border-0 min-w-[180px]"
+                style={{
+                  background: "rgba(30, 30, 35, 0.95)",
+                  backdropFilter: "blur(20px)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: "12px",
+                }}
               >
                 <DropdownMenuItem
                   onClick={() => onTabChange("settings")}
-                  className="text-white focus:bg-[#27272A] focus:text-white"
+                  className="text-white/80 focus:bg-white/5 focus:text-white rounded-lg"
                 >
-                  <Settings className="size-4 mr-2" />
+                  <Settings className="size-4 mr-2" strokeWidth={2} />
                   Configuración
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-[#27272A]" />
+                <DropdownMenuSeparator className="bg-white/[0.06]" />
                 <DropdownMenuItem
                   onClick={onDelete}
-                  className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
+                  className="text-red-400 focus:bg-red-500/10 focus:text-red-400 rounded-lg"
                 >
-                  <Trash2 className="size-4 mr-2" />
+                  <Trash2 className="size-4 mr-2" strokeWidth={2} />
                   Eliminar workspace
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -118,7 +139,7 @@ export function WorkspaceHeader({
       </div>
 
       {/* Tabs */}
-      <div className="px-6 flex gap-1">
+      <div className="px-8 flex gap-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -129,19 +150,33 @@ export function WorkspaceHeader({
           }
 
           return (
-            <button
+            <motion.button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all duration-200 border-b-2 -mb-px",
+                "relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "text-[#8B5CF6] border-[#8B5CF6]"
-                  : "text-[#A1A1AA] border-transparent hover:text-white hover:border-[#27272A]"
+                  ? "text-white"
+                  : "text-white/40 hover:text-white/70"
               )}
+              whileHover={{ y: -1 }}
+              whileTap={{ y: 0 }}
             >
-              <Icon className="size-4" />
+              <Icon 
+                className="size-4" 
+                strokeWidth={2}
+                style={{ color: isActive ? tab.color : undefined }}
+              />
               {tab.label}
-            </button>
+              {isActive && (
+                <motion.div
+                  className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
+                  style={{ background: tab.color }}
+                  layoutId="activeTab"
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                />
+              )}
+            </motion.button>
           );
         })}
       </div>

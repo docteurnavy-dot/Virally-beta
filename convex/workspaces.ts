@@ -492,5 +492,84 @@ export const leaveWorkspace = authenticatedMutation({
   },
 });
 
+// Get pending invitations for a workspace (owner only)
+export const getPendingInvitations = authenticatedQuery({
+  args: { workspaceId: v.id("workspaces") },
+  handler: async (ctx, args) => {
+    const workspace = await ctx.db.get(args.workspaceId);
+    if (!workspace) {
+      throw new ConvexError("Workspace not found");
+    }
+
+    if (workspace.ownerId !== ctx.user._id) {
+      throw new ConvexError("Only the owner can view pending invitations");
+    }
+
+    const invitations = await ctx.db
+      .query("workspaceInvitations")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+      .filter((q) => q.eq(q.field("status"), "pending"))
+      .collect();
+
+    return invitations;
+  },
+});
+
+// Update member role (owner only)
+export const updateMemberRole = authenticatedMutation({
+  args: {
+    workspaceId: v.id("workspaces"),
+    userId: v.id("users"),
+    role: v.union(v.literal("editor"), v.literal("viewer")),
+  },
+  handler: async (ctx, args) => {
+    const workspace = await ctx.db.get(args.workspaceId);
+    if (!workspace) {
+      throw new ConvexError("Workspace not found");
+    }
+
+    if (workspace.ownerId !== ctx.user._id) {
+      throw new ConvexError("Only the owner can update member roles");
+    }
+
+    const membership = await ctx.db
+      .query("workspaceMembers")
+      .withIndex("by_workspace_and_user", (q) =>
+        q.eq("workspaceId", args.workspaceId).eq("userId", args.userId)
+      )
+      .unique();
+
+    if (!membership) {
+      throw new ConvexError("Member not found");
+    }
+
+    await ctx.db.patch(membership._id, { role: args.role });
+    return null;
+  },
+});
+
+// Cancel invitation (owner only)
+export const cancelInvitation = authenticatedMutation({
+  args: { invitationId: v.id("workspaceInvitations") },
+  handler: async (ctx, args) => {
+    const invitation = await ctx.db.get(args.invitationId);
+    if (!invitation) {
+      throw new ConvexError("Invitation not found");
+    }
+
+    const workspace = await ctx.db.get(invitation.workspaceId);
+    if (!workspace) {
+      throw new ConvexError("Workspace not found");
+    }
+
+    if (workspace.ownerId !== ctx.user._id) {
+      throw new ConvexError("Only the owner can cancel invitations");
+    }
+
+    await ctx.db.delete(args.invitationId);
+    return null;
+  },
+});
+
 // Export the helper for use in other files
 export { checkWorkspaceAccess };

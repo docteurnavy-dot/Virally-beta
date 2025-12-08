@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/tooltip";
 import {
   Plus,
-  Sparkles,
+  Zap,
   ChevronRight,
   Users,
   Settings,
@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { motion } from "framer-motion";
 
 interface WorkspaceSidebarProps {
   selectedWorkspaceId: Id<"workspaces"> | null;
@@ -111,44 +112,67 @@ export function WorkspaceSidebar({
   };
 
   return (
-    <div className="flex flex-col h-full w-64 bg-[#0A0A0A] border-r border-[#27272A]">
+    <div 
+      className="flex flex-col h-full w-[280px]"
+      style={{
+        background: "linear-gradient(180deg, rgba(15, 15, 18, 0.95) 0%, rgba(10, 10, 13, 0.98) 100%)",
+        borderRight: "1px solid rgba(255, 255, 255, 0.06)",
+      }}
+    >
       {/* Header */}
-      <div className="p-4 border-b border-[#27272A]">
+      <div className="p-5 border-b border-white/[0.06]">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-[#6366F1] flex items-center justify-center">
-            <Sparkles className="size-5 text-white" />
-          </div>
+          <motion.div 
+            className="h-11 w-11 rounded-[14px] flex items-center justify-center relative"
+            style={{
+              background: "linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%)",
+              boxShadow: "0 4px 20px rgba(139, 92, 246, 0.4)",
+            }}
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
+            <Zap className="size-6 text-white" strokeWidth={1.5} />
+          </motion.div>
           <div>
-            <h1 className="text-sm font-semibold text-white">Creator Hub</h1>
-            <p className="text-xs text-[#A1A1AA]">Content Manager</p>
+            <h1 className="text-base font-semibold text-white tracking-tight">Virally</h1>
+            <p className="text-xs text-white/40">Content Manager</p>
           </div>
         </div>
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-3">
+        <div className="p-4">
           {/* Pending Invitations */}
           {pendingInvitations && pendingInvitations.length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs font-medium text-[#A1A1AA] uppercase tracking-wider px-2 mb-2">
+            <div className="mb-5">
+              <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider px-2 mb-3">
                 Invitaciones pendientes
               </p>
               <div className="space-y-2">
                 {pendingInvitations.map((invitation) => (
-                  <div
+                  <motion.div
                     key={invitation.invitationId}
-                    className="p-3 rounded-lg bg-[#8B5CF6]/10 border border-[#8B5CF6]/30"
+                    className="p-4 rounded-xl"
+                    style={{
+                      background: "rgba(139, 92, 246, 0.08)",
+                      border: "1px solid rgba(139, 92, 246, 0.2)",
+                    }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
                   >
                     <p className="text-sm text-white font-medium mb-1">
                       {invitation.workspace.name}
                     </p>
-                    <p className="text-xs text-[#A1A1AA] mb-2">
+                    <p className="text-xs text-white/50 mb-3">
                       Invitado por {invitation.invitedBy.name || invitation.invitedBy.email}
                     </p>
                     <div className="flex gap-2">
                       <Button
                         size="sm"
-                        className="h-7 text-xs bg-[#8B5CF6] hover:bg-[#7C3AED]"
+                        className="h-8 text-xs rounded-lg"
+                        style={{
+                          background: "linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%)",
+                        }}
                         onClick={() => handleAcceptInvitation(invitation.invitationId)}
                       >
                         Aceptar
@@ -156,23 +180,23 @@ export function WorkspaceSidebar({
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-7 text-xs text-[#A1A1AA] hover:text-white"
+                        className="h-8 text-xs text-white/50 hover:text-white hover:bg-white/5"
                         onClick={() => handleDeclineInvitation(invitation.invitationId)}
                       >
                         Rechazar
                       </Button>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-              <Separator className="my-4 bg-[#27272A]" />
+              <Separator className="my-5 bg-white/[0.06]" />
             </div>
           )}
 
           {/* My Workspaces */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between px-2 mb-2">
-              <p className="text-xs font-medium text-[#A1A1AA] uppercase tracking-wider">
+          <div className="mb-5">
+            <div className="flex items-center justify-between px-2 mb-3">
+              <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider">
                 Mis Workspaces
               </p>
               <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -180,103 +204,145 @@ export function WorkspaceSidebar({
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-6 w-6 text-[#A1A1AA] hover:text-white hover:bg-[#27272A]"
+                    className="h-6 w-6 text-white/40 hover:text-white hover:bg-white/5 rounded-lg"
                   >
-                    <Plus className="size-4" />
+                    <Plus className="size-4" strokeWidth={2} />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-[#18181B] border-[#27272A]">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">Crear Workspace</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleCreateWorkspace} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-white">Nombre de la marca</Label>
-                      <Input
-                        placeholder="Ej: Houdin, TEDx..."
-                        value={newWorkspace.name}
-                        onChange={(e) =>
-                          setNewWorkspace({ ...newWorkspace, name: e.target.value })
-                        }
-                        className="bg-[#27272A] border-[#3F3F46] text-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-white">Nicho</Label>
-                      <Input
-                        placeholder="Ej: IA Generativa, Tech Startups..."
-                        value={newWorkspace.niche}
-                        onChange={(e) =>
-                          setNewWorkspace({ ...newWorkspace, niche: e.target.value })
-                        }
-                        className="bg-[#27272A] border-[#3F3F46] text-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-white">Descripción (opcional)</Label>
-                      <Input
-                        placeholder="Breve descripción del proyecto..."
-                        value={newWorkspace.description}
-                        onChange={(e) =>
-                          setNewWorkspace({ ...newWorkspace, description: e.target.value })
-                        }
-                        className="bg-[#27272A] border-[#3F3F46] text-white"
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED]"
-                      disabled={isCreating}
-                    >
-                      {isCreating ? "Creando..." : "Crear Workspace"}
-                    </Button>
-                  </form>
+                <DialogContent 
+                  className="border-0 p-0 overflow-hidden max-w-md"
+                  style={{
+                    background: "rgba(30, 30, 35, 0.95)",
+                    backdropFilter: "blur(40px)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: "24px",
+                    boxShadow: "0 24px 80px rgba(0, 0, 0, 0.6)",
+                  }}
+                >
+                  <div className="p-8">
+                    <DialogHeader className="mb-6">
+                      <DialogTitle className="text-xl font-semibold text-white tracking-tight">
+                        Crear Workspace
+                      </DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateWorkspace} className="space-y-5">
+                      <div className="space-y-2">
+                        <Label className="text-white/70 text-sm font-normal">Nombre de la marca</Label>
+                        <Input
+                          placeholder="Ej: Houdin, TEDx..."
+                          value={newWorkspace.name}
+                          onChange={(e) =>
+                            setNewWorkspace({ ...newWorkspace, name: e.target.value })
+                          }
+                          className="h-12 bg-white/5 border border-white/[0.1] text-white placeholder:text-white/30 rounded-xl focus:border-white/30 focus:ring-0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-white/70 text-sm font-normal">Nicho</Label>
+                        <Input
+                          placeholder="Ej: IA Generativa, Tech Startups..."
+                          value={newWorkspace.niche}
+                          onChange={(e) =>
+                            setNewWorkspace({ ...newWorkspace, niche: e.target.value })
+                          }
+                          className="h-12 bg-white/5 border border-white/[0.1] text-white placeholder:text-white/30 rounded-xl focus:border-white/30 focus:ring-0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-white/70 text-sm font-normal">Descripción (opcional)</Label>
+                        <Input
+                          placeholder="Breve descripción del proyecto..."
+                          value={newWorkspace.description}
+                          onChange={(e) =>
+                            setNewWorkspace({ ...newWorkspace, description: e.target.value })
+                          }
+                          className="h-12 bg-white/5 border border-white/[0.1] text-white placeholder:text-white/30 rounded-xl focus:border-white/30 focus:ring-0"
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        disabled={isCreating}
+                        className="w-full h-12 rounded-xl text-base font-medium"
+                        style={{
+                          background: "linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%)",
+                          boxShadow: "0 8px 24px rgba(139, 92, 246, 0.3)",
+                        }}
+                      >
+                        {isCreating ? "Creando..." : "Crear Workspace"}
+                      </Button>
+                    </form>
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>
             <div className="space-y-1">
-              {workspaces?.owned.map((workspace) => (
+              {workspaces?.owned.map((workspace, index) => (
                 <Tooltip key={workspace._id}>
                   <TooltipTrigger asChild>
-                    <button
+                    <motion.button
                       onClick={() => onSelectWorkspace(workspace._id)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-2 py-2 rounded-lg transition-all duration-200",
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200",
                         selectedWorkspaceId === workspace._id
-                          ? "bg-[#8B5CF6]/20 border border-[#8B5CF6]/50"
-                          : "hover:bg-[#27272A] border border-transparent"
+                          ? "bg-white/[0.08]"
+                          : "hover:bg-white/[0.04]"
                       )}
+                      style={{
+                        border: selectedWorkspaceId === workspace._id 
+                          ? "1px solid rgba(139, 92, 246, 0.3)" 
+                          : "1px solid transparent",
+                      }}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ x: 2 }}
                     >
                       <div
                         className={cn(
-                          "h-8 w-8 rounded-lg flex items-center justify-center text-xs font-semibold",
+                          "h-9 w-9 rounded-xl flex items-center justify-center text-xs font-semibold transition-all",
                           selectedWorkspaceId === workspace._id
-                            ? "bg-[#8B5CF6] text-white"
-                            : "bg-[#27272A] text-[#A1A1AA]"
+                            ? "text-white"
+                            : "text-white/60"
                         )}
+                        style={{
+                          background: selectedWorkspaceId === workspace._id
+                            ? "linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%)"
+                            : "rgba(255, 255, 255, 0.05)",
+                        }}
                       >
                         {getWorkspaceInitials(workspace.name)}
                       </div>
                       <div className="flex-1 text-left min-w-0">
                         <p className="text-sm text-white truncate">{workspace.name}</p>
-                        <p className="text-xs text-[#A1A1AA] truncate">{workspace.niche}</p>
+                        <p className="text-xs text-white/40 truncate">{workspace.niche}</p>
                       </div>
                       <ChevronRight
                         className={cn(
-                          "size-4 text-[#A1A1AA] transition-transform",
-                          selectedWorkspaceId === workspace._id && "text-[#8B5CF6]"
+                          "size-4 transition-all",
+                          selectedWorkspaceId === workspace._id 
+                            ? "text-[#8B5CF6]" 
+                            : "text-white/20"
                         )}
+                        strokeWidth={2}
                       />
-                    </button>
+                    </motion.button>
                   </TooltipTrigger>
-                  <TooltipContent side="right" className="bg-[#27272A] border-[#3F3F46]">
+                  <TooltipContent 
+                    side="right" 
+                    className="border-0"
+                    style={{
+                      background: "rgba(30, 30, 35, 0.95)",
+                      backdropFilter: "blur(20px)",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                    }}
+                  >
                     <p className="text-white">{workspace.name}</p>
-                    <p className="text-xs text-[#A1A1AA]">{workspace.niche}</p>
+                    <p className="text-xs text-white/50">{workspace.niche}</p>
                   </TooltipContent>
                 </Tooltip>
               ))}
               {(!workspaces?.owned || workspaces.owned.length === 0) && (
-                <p className="text-xs text-[#A1A1AA] px-2 py-4 text-center">
+                <p className="text-xs text-white/30 px-3 py-6 text-center">
                   No tienes workspaces aún
                 </p>
               )}
@@ -286,52 +352,72 @@ export function WorkspaceSidebar({
           {/* Invited Workspaces */}
           {workspaces?.invited && workspaces.invited.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 px-2 mb-2">
-                <Users className="size-3 text-[#A1A1AA]" />
-                <p className="text-xs font-medium text-[#A1A1AA] uppercase tracking-wider">
+              <div className="flex items-center gap-2 px-2 mb-3">
+                <Users className="size-3 text-white/40" strokeWidth={2} />
+                <p className="text-[11px] font-medium text-white/40 uppercase tracking-wider">
                   Compartidos conmigo
                 </p>
               </div>
               <div className="space-y-1">
-                {workspaces.invited.map((workspace) => (
+                {workspaces.invited.map((workspace, index) => (
                   <Tooltip key={workspace._id}>
                     <TooltipTrigger asChild>
-                      <button
+                      <motion.button
                         onClick={() => onSelectWorkspace(workspace._id)}
                         className={cn(
-                          "w-full flex items-center gap-3 px-2 py-2 rounded-lg transition-all duration-200",
+                          "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200",
                           selectedWorkspaceId === workspace._id
-                            ? "bg-[#3B82F6]/20 border border-[#3B82F6]/50"
-                            : "hover:bg-[#27272A] border border-transparent"
+                            ? "bg-white/[0.08]"
+                            : "hover:bg-white/[0.04]"
                         )}
+                        style={{
+                          border: selectedWorkspaceId === workspace._id 
+                            ? "1px solid rgba(59, 130, 246, 0.3)" 
+                            : "1px solid transparent",
+                        }}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        whileHover={{ x: 2 }}
                       >
                         <div
                           className={cn(
-                            "h-8 w-8 rounded-lg flex items-center justify-center text-xs font-semibold",
+                            "h-9 w-9 rounded-xl flex items-center justify-center text-xs font-semibold transition-all",
                             selectedWorkspaceId === workspace._id
                               ? "bg-[#3B82F6] text-white"
-                              : "bg-[#27272A] text-[#A1A1AA]"
+                              : "bg-white/5 text-white/60"
                           )}
                         >
                           {getWorkspaceInitials(workspace.name)}
                         </div>
                         <div className="flex-1 text-left min-w-0">
                           <p className="text-sm text-white truncate">{workspace.name}</p>
-                          <p className="text-xs text-[#A1A1AA] truncate">
+                          <p className="text-xs text-white/40 truncate">
                             {workspace.role === "editor" ? "Editor" : "Viewer"}
                           </p>
                         </div>
                         <ChevronRight
                           className={cn(
-                            "size-4 text-[#A1A1AA] transition-transform",
-                            selectedWorkspaceId === workspace._id && "text-[#3B82F6]"
+                            "size-4 transition-all",
+                            selectedWorkspaceId === workspace._id 
+                              ? "text-[#3B82F6]" 
+                              : "text-white/20"
                           )}
+                          strokeWidth={2}
                         />
-                      </button>
+                      </motion.button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-[#27272A] border-[#3F3F46]">
+                    <TooltipContent 
+                      side="right" 
+                      className="border-0"
+                      style={{
+                        background: "rgba(30, 30, 35, 0.95)",
+                        backdropFilter: "blur(20px)",
+                        border: "1px solid rgba(255, 255, 255, 0.08)",
+                      }}
+                    >
                       <p className="text-white">{workspace.name}</p>
-                      <p className="text-xs text-[#A1A1AA]">{workspace.niche}</p>
+                      <p className="text-xs text-white/50">{workspace.niche}</p>
                     </TooltipContent>
                   </Tooltip>
                 ))}
@@ -342,24 +428,24 @@ export function WorkspaceSidebar({
       </ScrollArea>
 
       {/* Footer */}
-      <div className="p-3 border-t border-[#27272A]">
+      <div className="p-4 border-t border-white/[0.06]">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
-            className="flex-1 justify-start text-[#A1A1AA] hover:text-white hover:bg-[#27272A]"
+            className="flex-1 justify-start text-white/50 hover:text-white hover:bg-white/5 rounded-xl h-10"
             onClick={() => window.location.href = "/profile"}
           >
-            <Settings className="size-4 mr-2" />
+            <Settings className="size-4 mr-2" strokeWidth={2} />
             Ajustes
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="text-[#A1A1AA] hover:text-red-400 hover:bg-[#27272A]"
+            className="text-white/50 hover:text-red-400 hover:bg-white/5 rounded-xl h-10 w-10"
             onClick={() => signOut()}
           >
-            <LogOut className="size-4" />
+            <LogOut className="size-4" strokeWidth={2} />
           </Button>
         </div>
       </div>

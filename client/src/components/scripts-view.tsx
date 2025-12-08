@@ -47,11 +47,12 @@ interface ScriptsViewProps {
   role: string;
 }
 
-const statusConfig = {
+type ScriptStatusType = "draft" | "ready" | "filmed";
+
+const statusConfig: Record<ScriptStatusType, { label: string; color: string }> = {
   draft: { label: "Borrador", color: "bg-[#27272A] text-[#A1A1AA]" },
-  in_progress: { label: "En progreso", color: "bg-amber-500/20 text-amber-400" },
   ready: { label: "Listo", color: "bg-emerald-500/20 text-emerald-400" },
-  published: { label: "Publicado", color: "bg-[#8B5CF6]/20 text-[#8B5CF6]" },
+  filmed: { label: "Filmado", color: "bg-[#8B5CF6]/20 text-[#8B5CF6]" },
 };
 
 export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
@@ -80,8 +81,8 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
 
   const handleCreateScript = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newScript.title.trim()) {
-      toast.error("El título es requerido");
+    if (!newScript.title.trim() || !newScript.hook.trim() || !newScript.body.trim() || !newScript.cta.trim()) {
+      toast.error("Título, hook, cuerpo y CTA son requeridos");
       return;
     }
 
@@ -89,13 +90,14 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
       await createScript({
         workspaceId,
         title: newScript.title.trim(),
-        hook: newScript.hook.trim() || undefined,
-        body: newScript.body.trim() || undefined,
-        cta: newScript.cta.trim() || undefined,
+        hook: newScript.hook.trim(),
+        body: newScript.body.trim(),
+        cta: newScript.cta.trim(),
         musicSuggestion: newScript.musicSuggestion.trim() || undefined,
-        duration: newScript.duration ? parseInt(newScript.duration) : undefined,
+        duration: newScript.duration.trim() || undefined,
         leadMagnet: newScript.leadMagnet.trim() || undefined,
         digitalProduct: newScript.digitalProduct.trim() || undefined,
+        status: "draft",
       });
       toast.success("Guión creado");
       setNewScript({
@@ -156,14 +158,14 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
   );
 
   return (
-    <div className="p-6 h-full overflow-hidden flex flex-col">
+    <div className="p-8 h-full overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-2xl font-semibold text-white tracking-tight">
             Guiones de Video
           </h2>
-          <p className="text-sm text-[#A1A1AA] mt-1">
+          <p className="text-sm text-white/40 mt-1">
             Crea y organiza guiones con hooks, CTAs y productos
           </p>
         </div>
@@ -171,28 +173,41 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
         {canEdit && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED]">
-                <Plus className="size-4 mr-2" />
+              <Button 
+                className="rounded-xl h-10"
+                style={{
+                  background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+                }}
+              >
+                <Plus className="size-4 mr-2" strokeWidth={2} />
                 Nuevo guión
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#18181B] border-[#27272A] max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent 
+              className="max-w-2xl max-h-[90vh] overflow-y-auto border-0"
+              style={{
+                background: "rgba(30, 30, 35, 0.95)",
+                backdropFilter: "blur(40px)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: "24px",
+              }}
+            >
               <DialogHeader>
-                <DialogTitle className="text-white">Nuevo guión de video</DialogTitle>
+                <DialogTitle className="text-white text-lg">Nuevo guión de video</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleCreateScript} className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-white">Título del video</Label>
+                  <Label className="text-white/70 text-sm">Título del video</Label>
                   <Input
                     placeholder="Ej: 5 herramientas de IA que cambiarán tu vida"
                     value={newScript.title}
                     onChange={(e) => setNewScript({ ...newScript, title: e.target.value })}
-                    className="bg-[#27272A] border-[#3F3F46] text-white"
+                    className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-white flex items-center gap-2">
+                  <Label className="text-white/70 text-sm flex items-center gap-2">
                     <Target className="size-4 text-[#8B5CF6]" />
                     Hook (primeros 3 segundos)
                   </Label>
@@ -200,12 +215,12 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
                     placeholder="El gancho que captará la atención..."
                     value={newScript.hook}
                     onChange={(e) => setNewScript({ ...newScript, hook: e.target.value })}
-                    className="bg-[#27272A] border-[#3F3F46] text-white min-h-[80px]"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 min-h-[80px] rounded-xl focus:border-[#8B5CF6]/50"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-white flex items-center gap-2">
+                  <Label className="text-white/70 text-sm flex items-center gap-2">
                     <FileText className="size-4 text-[#3B82F6]" />
                     Cuerpo del guión
                   </Label>
@@ -213,23 +228,23 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
                     placeholder="El contenido principal del video..."
                     value={newScript.body}
                     onChange={(e) => setNewScript({ ...newScript, body: e.target.value })}
-                    className="bg-[#27272A] border-[#3F3F46] text-white min-h-[150px]"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 min-h-[150px] rounded-xl focus:border-[#8B5CF6]/50"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-white">Call to Action (CTA)</Label>
+                  <Label className="text-white/70 text-sm">Call to Action (CTA)</Label>
                   <Input
                     placeholder="Ej: Sígueme para más tips de IA"
                     value={newScript.cta}
                     onChange={(e) => setNewScript({ ...newScript, cta: e.target.value })}
-                    className="bg-[#27272A] border-[#3F3F46] text-white"
+                    className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-white flex items-center gap-2">
+                    <Label className="text-white/70 text-sm flex items-center gap-2">
                       <Music className="size-4 text-emerald-400" />
                       Música sugerida
                     </Label>
@@ -239,11 +254,11 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
                       onChange={(e) =>
                         setNewScript({ ...newScript, musicSuggestion: e.target.value })
                       }
-                      className="bg-[#27272A] border-[#3F3F46] text-white"
+                      className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-white flex items-center gap-2">
+                    <Label className="text-white/70 text-sm flex items-center gap-2">
                       <Clock className="size-4 text-amber-400" />
                       Duración (segundos)
                     </Label>
@@ -252,14 +267,14 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
                       placeholder="60"
                       value={newScript.duration}
                       onChange={(e) => setNewScript({ ...newScript, duration: e.target.value })}
-                      className="bg-[#27272A] border-[#3F3F46] text-white"
+                      className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-white flex items-center gap-2">
+                    <Label className="text-white/70 text-sm flex items-center gap-2">
                       <Package className="size-4 text-rose-400" />
                       Lead Magnet
                     </Label>
@@ -267,23 +282,29 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
                       placeholder="Ej: Guía gratuita de IA"
                       value={newScript.leadMagnet}
                       onChange={(e) => setNewScript({ ...newScript, leadMagnet: e.target.value })}
-                      className="bg-[#27272A] border-[#3F3F46] text-white"
+                      className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-white">Producto Digital</Label>
+                    <Label className="text-white/70 text-sm">Producto Digital</Label>
                     <Input
                       placeholder="Ej: Curso de IA para creadores"
                       value={newScript.digitalProduct}
                       onChange={(e) =>
                         setNewScript({ ...newScript, digitalProduct: e.target.value })
                       }
-                      className="bg-[#27272A] border-[#3F3F46] text-white"
+                      className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                     />
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED]">
+                <Button 
+                  type="submit" 
+                  className="w-full h-11 rounded-xl font-medium"
+                  style={{
+                    background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+                  }}
+                >
                   Crear guión
                 </Button>
               </form>
@@ -294,12 +315,12 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
 
       {/* Search */}
       <div className="relative max-w-sm mb-6">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#A1A1AA]" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-white/40" strokeWidth={2} />
         <Input
           placeholder="Buscar guiones..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 bg-[#18181B] border-[#27272A] text-white"
+          className="pl-10 h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
         />
       </div>
 
@@ -309,7 +330,11 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
           {filteredScripts?.map((script) => (
             <Card
               key={script._id}
-              className="bg-[#18181B] border-[#27272A] cursor-pointer transition-all duration-200 hover:border-[#3F3F46] hover:shadow-lg hover:shadow-black/20"
+              className="border-0 cursor-pointer transition-all duration-200 hover:-translate-y-1"
+              style={{
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.06)",
+              }}
               onClick={() => {
                 setEditingScript(script);
                 setIsEditOpen(true);
@@ -329,33 +354,33 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
                 {script.hook && (
                   <div className="flex items-start gap-2">
                     <Target className="size-3 text-[#8B5CF6] mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-[#A1A1AA] line-clamp-2">{script.hook}</p>
+                    <p className="text-xs text-white/40 line-clamp-2">{script.hook}</p>
                   </div>
                 )}
 
                 <div className="flex flex-wrap gap-2">
                   {script.duration && (
-                    <div className="flex items-center gap-1 text-[10px] text-[#A1A1AA] bg-[#27272A] px-2 py-1 rounded">
+                    <div className="flex items-center gap-1 text-[10px] text-white/50 bg-white/5 px-2 py-1 rounded-lg">
                       <Clock className="size-3" />
                       {script.duration}s
                     </div>
                   )}
                   {script.musicSuggestion && (
-                    <div className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">
+                    <div className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg">
                       <Music className="size-3" />
                       Música
                     </div>
                   )}
                   {script.leadMagnet && (
-                    <div className="flex items-center gap-1 text-[10px] text-rose-400 bg-rose-500/10 px-2 py-1 rounded">
+                    <div className="flex items-center gap-1 text-[10px] text-rose-400 bg-rose-500/10 px-2 py-1 rounded-lg">
                       <Package className="size-3" />
                       Lead Magnet
                     </div>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-[#27272A]">
-                  <span className="text-[10px] text-[#A1A1AA]">
+                <div className="flex items-center justify-between pt-2 border-t border-white/[0.06]">
+                  <span className="text-[10px] text-white/40">
                     {format(script.createdAt, "d MMM yyyy", { locale: es })}
                   </span>
                 </div>
@@ -365,14 +390,17 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
 
           {(!filteredScripts || filteredScripts.length === 0) && (
             <div className="col-span-full text-center py-12">
-              <FileText className="size-12 text-[#27272A] mx-auto mb-4" />
-              <p className="text-[#A1A1AA]">No hay guiones aún</p>
+              <FileText className="size-12 text-white/10 mx-auto mb-4" />
+              <p className="text-white/40">No hay guiones aún</p>
               {canEdit && (
                 <Button
-                  className="mt-4 bg-[#8B5CF6] hover:bg-[#7C3AED]"
+                  className="mt-4 rounded-xl"
+                  style={{
+                    background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+                  }}
                   onClick={() => setIsCreateOpen(true)}
                 >
-                  <Plus className="size-4 mr-2" />
+                  <Plus className="size-4 mr-2" strokeWidth={2} />
                   Crear primer guión
                 </Button>
               )}
@@ -383,18 +411,26 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
 
       {/* Edit Script Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="bg-[#18181B] border-[#27272A] max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent 
+          className="max-w-2xl max-h-[90vh] overflow-y-auto border-0"
+          style={{
+            background: "rgba(30, 30, 35, 0.95)",
+            backdropFilter: "blur(40px)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "24px",
+          }}
+        >
           <DialogHeader>
-            <DialogTitle className="text-white">Editar guión</DialogTitle>
+            <DialogTitle className="text-white text-lg">Editar guión</DialogTitle>
           </DialogHeader>
           {editingScript && (
             <form onSubmit={handleUpdateScript} className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-white">Título del video</Label>
+                <Label className="text-white/70 text-sm">Título del video</Label>
                 <Input
                   value={editingScript.title}
                   onChange={(e) => setEditingScript({ ...editingScript, title: e.target.value })}
-                  className="bg-[#27272A] border-[#3F3F46] text-white"
+                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                   disabled={!canEdit}
                 />
               </div>
@@ -406,7 +442,7 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
                   onValueChange={(v) =>
                     setEditingScript({
                       ...editingScript,
-                      status: v as "draft" | "in_progress" | "ready" | "published",
+                      status: v as ScriptStatusType,
                     })
                   }
                   disabled={!canEdit}
@@ -416,9 +452,8 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
                   </SelectTrigger>
                   <SelectContent className="bg-[#27272A] border-[#3F3F46]">
                     <SelectItem value="draft">Borrador</SelectItem>
-                    <SelectItem value="in_progress">En progreso</SelectItem>
                     <SelectItem value="ready">Listo</SelectItem>
-                    <SelectItem value="published">Publicado</SelectItem>
+                    <SelectItem value="filmed">Filmado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -477,15 +512,15 @@ export function ScriptsView({ workspaceId, role }: ScriptsViewProps) {
                 <div className="space-y-2">
                   <Label className="text-white flex items-center gap-2">
                     <Clock className="size-4 text-amber-400" />
-                    Duración (segundos)
+                    Duración
                   </Label>
                   <Input
-                    type="number"
+                    placeholder="60s, 1min, etc."
                     value={editingScript.duration || ""}
                     onChange={(e) =>
                       setEditingScript({
                         ...editingScript,
-                        duration: e.target.value ? parseInt(e.target.value) : undefined,
+                        duration: e.target.value || undefined,
                       })
                     }
                     className="bg-[#27272A] border-[#3F3F46] text-white"

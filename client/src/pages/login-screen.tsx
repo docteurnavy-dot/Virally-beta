@@ -9,7 +9,8 @@ import type {
   PasswordValidation,
 } from "@/hooks/use-password-validation";
 import { cn } from "@/lib/utils";
-import { CheckCircle, XCircle, Sparkles, Calendar, Lightbulb, BarChart3 } from "lucide-react";
+import { CheckCircle, XCircle, Sparkles } from "lucide-react";
+import { ShaderGradientCanvas, ShaderGradient } from "@shadergradient/react";
 
 function SignUpFields({
   data,
@@ -26,8 +27,8 @@ function SignUpFields({
   updateField: (field: keyof typeof data, value: string) => void;
 }) {
   return (
-    <div className="space-y-2">
-      <Label htmlFor="name" className="text-white">Nombre</Label>
+    <div className="space-y-1.5">
+      <Label htmlFor="name" className="text-white/80 text-sm font-normal">Nombre</Label>
       <Input
         id="name"
         type="text"
@@ -36,7 +37,7 @@ function SignUpFields({
         onChange={(e) => updateField("name", e.target.value)}
         required
         disabled={isLoading}
-        className="bg-[#18181B] border-[#27272A] text-white placeholder:text-[#A1A1AA] focus:border-[#8B5CF6] focus:ring-[#8B5CF6]/20"
+        className="h-12 bg-white/5 border border-white/[0.18] text-white placeholder:text-white/40 rounded-2xl backdrop-blur-xl focus:border-white/40 focus:ring-0 transition-all duration-300"
       />
     </div>
   );
@@ -68,8 +69,8 @@ function PasswordField({
     isSignUp && passwordTouched && !passwordValidation.isValid && data.password;
 
   return (
-    <div className="space-y-2">
-      <Label htmlFor="password" className="text-white">Contraseña</Label>
+    <div className="space-y-1.5">
+      <Label htmlFor="password" className="text-white/80 text-sm font-normal">Contraseña</Label>
       <PasswordInput
         id="password"
         placeholder="Tu contraseña"
@@ -79,10 +80,10 @@ function PasswordField({
         validationState={getValidationState()}
         required
         disabled={isLoading}
-        className="bg-[#18181B] border-[#27272A] text-white placeholder:text-[#A1A1AA] focus:border-[#8B5CF6] focus:ring-[#8B5CF6]/20"
+        className="h-12 bg-white/5 border border-white/[0.18] text-white placeholder:text-white/40 rounded-2xl backdrop-blur-xl focus:border-white/40 focus:ring-0 transition-all duration-300"
       />
       {showError && (
-        <p className="text-xs text-red-400 font-medium">
+        <p className="text-xs text-red-400/90 font-normal mt-1">
           Mínimo 6 caracteres con una letra y un número
         </p>
       )}
@@ -107,8 +108,8 @@ function ConfirmPasswordField({
   };
 
   return (
-    <div className="space-y-2">
-      <Label htmlFor="confirmPassword" className="text-white">Confirmar contraseña</Label>
+    <div className="space-y-1.5">
+      <Label htmlFor="confirmPassword" className="text-white/80 text-sm font-normal">Confirmar contraseña</Label>
       <PasswordInput
         id="confirmPassword"
         placeholder="Confirma tu contraseña"
@@ -117,7 +118,7 @@ function ConfirmPasswordField({
         validationState={getValidationState()}
         required
         disabled={isLoading}
-        className="bg-[#18181B] border-[#27272A] text-white placeholder:text-[#A1A1AA] focus:border-[#8B5CF6] focus:ring-[#8B5CF6]/20"
+        className="h-12 bg-white/5 border border-white/[0.18] text-white placeholder:text-white/40 rounded-2xl backdrop-blur-xl focus:border-white/40 focus:ring-0 transition-all duration-300"
       />
       <ValidationMessage
         type="error"
@@ -160,8 +161,8 @@ function EmailField({
   const showError = emailTouched && !emailValidation.isValid && data.email;
 
   return (
-    <div className="space-y-2">
-      <Label htmlFor="email" className="text-white">Email</Label>
+    <div className="space-y-1.5">
+      <Label htmlFor="email" className="text-white/80 text-sm font-normal">Email</Label>
       <div className="relative">
         <Input
           id="email"
@@ -171,30 +172,27 @@ function EmailField({
           onChange={(e) => updateField("email", e.target.value)}
           onBlur={setEmailTouched}
           className={cn(
-            "pr-9 transition-all duration-200 bg-[#18181B] border-[#27272A] text-white placeholder:text-[#A1A1AA]",
-            validationState === "valid" &&
-              "border-emerald-500 focus:border-emerald-400 focus:ring-emerald-400/20",
-            validationState === "invalid" &&
-              "border-red-500 focus:border-red-400 focus:ring-red-400/20",
-            validationState === "neutral" &&
-              "focus:border-[#8B5CF6] focus:ring-[#8B5CF6]/20"
+            "h-12 pr-10 bg-white/5 border border-white/[0.18] text-white placeholder:text-white/40 rounded-2xl backdrop-blur-xl transition-all duration-300",
+            validationState === "valid" && "border-emerald-500/50 focus:border-emerald-500/70",
+            validationState === "invalid" && "border-red-500/50 focus:border-red-500/70",
+            validationState === "neutral" && "focus:border-white/40"
           )}
           required
           disabled={isLoading}
         />
         {validationState === "valid" && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <CheckCircle className="h-4 w-4 text-emerald-500" />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            <CheckCircle className="h-4 w-4 text-emerald-400" />
           </div>
         )}
         {validationState === "invalid" && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
             <XCircle className="h-4 w-4 text-red-400" />
           </div>
         )}
       </div>
       {showError && (
-        <p className="text-xs text-red-400 font-medium">
+        <p className="text-xs text-red-400/90 font-normal mt-1">
           Introduce un email válido
         </p>
       )}
@@ -221,26 +219,86 @@ export function LoginPage() {
   } = useLoginForm();
 
   return (
-    <div className="min-h-screen flex bg-[#0A0A0A]">
-      {/* Left side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-6 lg:px-20 xl:px-24">
-        <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen relative overflow-hidden bg-black">
+      {/* Shader Gradient Background */}
+      <ShaderGradientCanvas
+        style={{ position: "absolute", inset: 0 }}
+        pixelDensity={1}
+        fov={45}
+      >
+        <ShaderGradient
+          animate="on"
+          brightness={1.1}
+          cAzimuthAngle={180}
+          cDistance={3.9}
+          cPolarAngle={115}
+          cameraZoom={1}
+          color1="#5606ff"
+          color2="#fe8989"
+          color3="#000000"
+          envPreset="city"
+          grain="off"
+          lightType="3d"
+          positionX={-0.5}
+          positionY={0.1}
+          positionZ={0}
+          reflection={0.1}
+          rotationX={0}
+          rotationY={0}
+          rotationZ={235}
+          type="waterPlane"
+          uAmplitude={0}
+          uDensity={1.1}
+          uFrequency={5.5}
+          uSpeed={0.1}
+          uStrength={2.4}
+          uTime={0.2}
+          wireframe={false}
+        />
+      </ShaderGradientCanvas>
+
+      {/* Gradient overlays for depth */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40 pointer-events-none" />
+
+      {/* Content */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
+        {/* Glassmorphism Card */}
+        <div 
+          className="w-full max-w-md p-8 rounded-3xl animate-fade-in-up"
+          style={{
+            background: "rgba(50, 50, 50, 0.4)",
+            backdropFilter: "blur(40px) saturate(180%)",
+            WebkitBackdropFilter: "blur(40px) saturate(180%)",
+            border: "1px solid rgba(255, 255, 255, 0.18)",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.37), 0 0 0 1px rgba(255, 255, 255, 0.05) inset",
+          }}
+        >
           {/* Logo */}
-          <div className="flex justify-center">
-            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#8B5CF6] to-[#6366F1] flex items-center justify-center shadow-lg shadow-[#8B5CF6]/25">
-              <Sparkles className="size-7 text-white" />
+          <div className="flex justify-center mb-6">
+            <div 
+              className="h-16 w-16 rounded-2xl flex items-center justify-center animate-pulse-glow"
+              style={{
+                background: "linear-gradient(135deg, rgba(86, 6, 255, 0.9), rgba(254, 137, 137, 0.7))",
+              }}
+            >
+              <Sparkles className="size-8 text-white" strokeWidth={1.5} />
             </div>
           </div>
-          <div className="space-y-2 text-center">
-            <h1 className="text-3xl font-semibold tracking-tight text-white">
-              {isSignUp ? "Crea tu cuenta" : "Bienvenido de nuevo"}
+
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-semibold text-white tracking-tight mb-2">
+              {isSignUp ? "Únete a Virally" : "Bienvenido a Virally"}
             </h1>
-            <p className="text-[#A1A1AA] font-normal">
+            <p className="text-white/60 text-sm font-normal">
               {isSignUp
-                ? "Empieza a organizar tu contenido como un pro"
-                : "Accede a tu espacio de trabajo"}
+                ? "Crea tu cuenta y empieza a dominar las redes"
+                : "¿Listo para crear un imperio digital?"}
             </p>
           </div>
+
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             {isSignUp && (
               <SignUpFields
@@ -274,30 +332,37 @@ export function LoginPage() {
                 updateField={updateField}
               />
             )}
+
+            {/* Submit Button - Apple style */}
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-[#8B5CF6] to-[#6366F1] hover:from-[#7C3AED] hover:to-[#4F46E5] text-white font-medium h-11 shadow-lg shadow-[#8B5CF6]/25 transition-all duration-300 hover:shadow-[#8B5CF6]/40 hover:scale-[1.02]"
               disabled={isLoading || !isFormValid}
+              className="w-full h-12 rounded-2xl text-base font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] btn-hover"
+              style={{
+                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85))",
+                color: "#000",
+                boxShadow: "0 4px 24px rgba(255, 255, 255, 0.2)",
+              }}
             >
               {isLoading
                 ? isSignUp
-                  ? "Creando cuenta..."
-                  : "Iniciando sesión..."
+                  ? "Creando..."
+                  : "Entrando..."
                 : isSignUp
                   ? "Crear cuenta"
-                  : "Iniciar sesión"}
+                  : "Continuar"}
             </Button>
           </form>
-          <div className="text-center">
-            <span className="text-sm text-[#A1A1AA]">
-              {isSignUp
-                ? "¿Ya tienes cuenta? "
-                : "¿No tienes cuenta? "}
+
+          {/* Toggle */}
+          <div className="text-center mt-6">
+            <span className="text-sm text-white/50">
+              {isSignUp ? "¿Ya tienes cuenta? " : "¿No tienes cuenta? "}
             </span>
             <button
               type="button"
               onClick={toggleMode}
-              className="text-sm font-medium cursor-pointer text-[#8B5CF6] hover:text-[#A78BFA] transition-colors"
+              className="text-sm font-medium text-white/90 hover:text-white transition-colors"
               disabled={isLoading}
             >
               {isSignUp ? "Inicia sesión" : "Regístrate"}
@@ -305,59 +370,23 @@ export function LoginPage() {
           </div>
         </div>
       </div>
-      
-      {/* Right side panel - Features */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#8B5CF6]/20 via-[#0A0A0A] to-[#3B82F6]/10" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#8B5CF6]/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#3B82F6]/20 rounded-full blur-3xl" />
-        
-        <div className="relative z-10 w-full p-16 flex flex-col justify-center">
-          <div className="max-w-lg">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 mb-8">
-              <Sparkles className="w-4 h-4 text-[#8B5CF6]" />
-              <span className="text-sm font-medium text-[#8B5CF6] uppercase tracking-wider">Content Creator Hub</span>
-            </div>
-            
-            <h2 className="text-4xl font-semibold text-white leading-tight mb-6 tracking-tight">
-              Tu centro de comando para crear contenido viral
-            </h2>
-            
-            <p className="text-lg text-[#A1A1AA] mb-10">
-              Organiza ideas, planifica tu calendario y analiza el rendimiento de tu contenido en un solo lugar.
-            </p>
-            
-            <ul className="space-y-6">
-              <li className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-[#8B5CF6]" />
-                </div>
-                <div>
-                  <h3 className="text-white font-medium mb-1">Calendario inteligente</h3>
-                  <p className="text-[#A1A1AA] text-sm">Planifica tu contenido con IA y distribuye en TOFU, MOFU y BOFU</p>
-                </div>
-              </li>
-              <li className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#3B82F6]/10 border border-[#3B82F6]/30 flex items-center justify-center">
-                  <Lightbulb className="w-5 h-5 text-[#3B82F6]" />
-                </div>
-                <div>
-                  <h3 className="text-white font-medium mb-1">Organizador de ideas</h3>
-                  <p className="text-[#A1A1AA] text-sm">Captura y puntúa ideas según su potencial viral</p>
-                </div>
-              </li>
-              <li className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-                  <BarChart3 className="w-5 h-5 text-emerald-500" />
-                </div>
-                <div>
-                  <h3 className="text-white font-medium mb-1">Analytics unificados</h3>
-                  <p className="text-[#A1A1AA] text-sm">Mide el rendimiento de todo tu contenido en un dashboard</p>
-                </div>
-              </li>
-            </ul>
-          </div>
+
+      {/* Floating Dock - macOS style */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-20">
+        <div 
+          className="flex items-center gap-3 px-5 py-3 rounded-3xl"
+          style={{
+            background: "rgba(50, 50, 50, 0.7)",
+            backdropFilter: "blur(40px) saturate(180%)",
+            WebkitBackdropFilter: "blur(40px) saturate(180%)",
+            border: "1px solid rgba(255, 255, 255, 0.18)",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.37)",
+          }}
+        >
+          <Sparkles className="size-4 text-white/70" strokeWidth={2} />
+          <span className="text-white/80 text-sm font-medium">Virally</span>
+          <div className="w-px h-4 bg-white/20" />
+          <span className="text-white/40 text-xs">Tu centro de contenido viral</span>
         </div>
       </div>
     </div>

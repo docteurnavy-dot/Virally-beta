@@ -9,7 +9,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn, getUserColor } from "@/lib/utils";
@@ -33,7 +32,7 @@ export default function UserDropdown({ className }: UserDropdownProps) {
   const isLoading = user === undefined;
 
   if (isLoading) {
-    return <div className="size-8 animate-pulse rounded-full bg-muted" />;
+    return <div className="size-8 animate-pulse rounded-full bg-white/10" />;
   }
 
   function UserAvatar({
@@ -65,13 +64,13 @@ export default function UserDropdown({ className }: UserDropdownProps) {
   const getRoleBadgeStyles = (role?: string) => {
     switch (role) {
       case VALID_ROLES.ADMIN:
-        return "bg-purple-100 text-purple-700";
+        return "bg-[#8B5CF6]/20 text-[#A78BFA] border-[#8B5CF6]/30";
       case VALID_ROLES.EDITOR:
-        return "bg-blue-100 text-blue-700";
+        return "bg-[#3B82F6]/20 text-[#60A5FA] border-[#3B82F6]/30";
       case VALID_ROLES.VIEWER:
-        return "bg-muted text-muted-foreground border-border";
+        return "bg-white/5 text-white/50 border-white/10";
       default:
-        return "bg-muted text-muted-foreground border-border";
+        return "bg-white/5 text-white/50 border-white/10";
     }
   };
 
@@ -80,65 +79,80 @@ export default function UserDropdown({ className }: UserDropdownProps) {
       <DropdownMenuTrigger
         className={cn("focus:outline-none cursor-pointer", className)}
       >
-        <UserAvatar className="size-8" />
+        <UserAvatar className="size-8 ring-2 ring-white/10 hover:ring-white/20 transition-all" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-72" sideOffset={8}>
+      <DropdownMenuContent 
+        align="end" 
+        className="w-72 border-0 p-0 overflow-hidden"
+        style={{
+          background: "rgba(30, 30, 35, 0.95)",
+          backdropFilter: "blur(40px)",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          borderRadius: "16px",
+          boxShadow: "0 24px 80px rgba(0, 0, 0, 0.6)",
+        }}
+        sideOffset={8}
+      >
         {user ? (
           <>
-            <div className="flex items-start justify-between gap-3 p-2">
-              <UserAvatar className="size-8" fallbackClassName="text-base" />
+            <div className="flex items-start justify-between gap-3 p-4">
+              <UserAvatar className="size-10" fallbackClassName="text-base" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm truncate">
+                <p className="text-sm text-white truncate font-medium">
                   {user.name || user.email?.split("@")[0]}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-xs text-white/40 truncate">
                   {user.email}
                 </p>
               </div>
-              <Badge className={cn("text-xs", getRoleBadgeStyles(user.role))}>
+              <Badge className={cn("text-[10px] font-medium border", getRoleBadgeStyles(user.role))}>
                 {user.role || "No role"}
               </Badge>
             </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => navigate("/")}
-              className="text-muted-foreground"
-            >
-              <Home className="mr-2 size-4" />
-              <span>Home</span>
-            </DropdownMenuItem>
-            {user.role === VALID_ROLES.ADMIN && (
+            <div className="h-px bg-white/[0.06]" />
+            <div className="p-2">
               <DropdownMenuItem
-                onClick={() => navigate("/admin")}
-                className="text-muted-foreground"
+                onClick={() => navigate("/")}
+                className="text-white/60 hover:text-white hover:bg-white/5 rounded-lg cursor-pointer"
               >
-                <Shield className="mr-2 size-4" />
-                <span>Admin Settings</span>
+                <Home className="mr-2 size-4" strokeWidth={2} />
+                <span>Inicio</span>
               </DropdownMenuItem>
-            )}
-            <DropdownMenuItem
-              onClick={() => navigate("/profile")}
-              className="text-muted-foreground"
-            >
-              <Cog className="mr-2 size-4" />
-              <span>Account Settings</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onClick={() => {
-                signOut();
-              }}
-            >
-              <LogOut className="mr-2 size-4" />
-              Sign out
-            </DropdownMenuItem>
+              {user.role === VALID_ROLES.ADMIN && (
+                <DropdownMenuItem
+                  onClick={() => navigate("/admin")}
+                  className="text-white/60 hover:text-white hover:bg-white/5 rounded-lg cursor-pointer"
+                >
+                  <Shield className="mr-2 size-4" strokeWidth={2} />
+                  <span>Admin</span>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem
+                onClick={() => navigate("/profile")}
+                className="text-white/60 hover:text-white hover:bg-white/5 rounded-lg cursor-pointer"
+              >
+                <Cog className="mr-2 size-4" strokeWidth={2} />
+                <span>Configuración</span>
+              </DropdownMenuItem>
+            </div>
+            <div className="h-px bg-white/[0.06]" />
+            <div className="p-2">
+              <DropdownMenuItem
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg cursor-pointer"
+                onClick={() => {
+                  signOut();
+                }}
+              >
+                <LogOut className="mr-2 size-4" strokeWidth={2} />
+                Cerrar sesión
+              </DropdownMenuItem>
+            </div>
           </>
         ) : (
           <div className="p-4">
             <div className="space-y-3">
-              <div className="h-3 w-24 animate-pulse rounded bg-muted" />
-              <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
+              <div className="h-3 w-32 animate-pulse rounded bg-white/10" />
             </div>
           </div>
         )}

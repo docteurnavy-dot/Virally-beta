@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Copy, Loader2 } from "lucide-react";
-import { cn, getUserColor } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { VALID_ROLES } from "@/convex/lib/internal_schema";
 import { Button } from "@/components/ui/button";
 
@@ -87,13 +87,13 @@ export default function ProfilePage() {
   const getRoleBadgeStyles = (role?: string) => {
     switch (role) {
       case VALID_ROLES.ADMIN:
-        return "bg-purple-50 text-purple-700 border-purple-200";
+        return "bg-[#8B5CF6]/20 text-[#A78BFA] border-[#8B5CF6]/30";
       case VALID_ROLES.EDITOR:
-        return "bg-blue-50 text-blue-700 border-blue-200";
+        return "bg-[#3B82F6]/20 text-[#60A5FA] border-[#3B82F6]/30";
       case VALID_ROLES.VIEWER:
-        return "bg-gray-50 text-gray-700 border-gray-200";
+        return "bg-white/5 text-white/50 border-white/10";
       default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
+        return "bg-white/5 text-white/50 border-white/10";
     }
   };
 
@@ -101,7 +101,7 @@ export default function ProfilePage() {
     return (
       <Layout>
         <div className="flex min-h-screen items-center justify-center">
-          <Loader2 className="size-8 animate-spin text-muted-foreground" />
+          <Loader2 className="size-8 animate-spin text-white/40" />
         </div>
       </Layout>
     );
@@ -112,56 +112,59 @@ export default function ProfilePage() {
       <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 pb-24">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-medium text-foreground tracking-tight">
-            Profile Settings
+          <h1 className="text-2xl font-semibold text-white tracking-tight">
+            Configuración de Perfil
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage your account information and preferences
+          <p className="mt-1 text-sm text-white/40">
+            Gestiona tu información de cuenta
           </p>
         </div>
 
         {/* Profile Card */}
-        <Card>
+        <Card 
+          className="border-0"
+          style={{
+            background: "rgba(255, 255, 255, 0.03)",
+            border: "1px solid rgba(255, 255, 255, 0.06)",
+          }}
+        >
           <CardHeader className="pb-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
               <div className="flex items-center gap-4 h-fit">
-                <Avatar className="size-12 border flex-shrink-0">
+                <Avatar className="size-12 flex-shrink-0 ring-2 ring-white/10">
                   <AvatarImage
                     src={formData.image}
                     alt={formData.name || "User"}
                   />
                   <AvatarFallback
-                    className={cn(
-                      "text-xl font-medium",
-                      getUserColor(currentUser.email),
-                    )}
+                    className="text-xl font-medium bg-gradient-to-br from-[#8B5CF6] to-[#D946EF] text-white"
                   >
                     {getUserInitials(formData.name, formData.email)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-medium text-foreground truncate">
-                      {currentUser.name || "Unnamed User"}
+                    <h2 className="text-xl font-medium text-white truncate">
+                      {currentUser.name || "Usuario"}
                     </h2>
                     <Badge
                       className={cn(
-                        "font-medium text-xs",
+                        "font-medium text-xs border",
                         getRoleBadgeStyles(currentUser.role),
                       )}
                     >
                       {currentUser.role || "No role"}
                     </Badge>
                   </div>
-                  <p className="text-base text-muted-foreground">
+                  <p className="text-base text-white/40">
                     {currentUser.email}
                   </p>
                 </div>
               </div>
               {isSaving && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-sm text-white/40">
                   <Loader2 className="size-4 animate-spin" />
-                  Saving...
+                  Guardando...
                 </div>
               )}
             </div>
@@ -173,9 +176,9 @@ export default function ProfilePage() {
               <div className="space-y-2">
                 <Label
                   htmlFor="name"
-                  className="flex items-center gap-2 text-[13px]"
+                  className="flex items-center gap-2 text-sm text-white/70"
                 >
-                  Full Name
+                  Nombre completo
                 </Label>
                 <Input
                   id="name"
@@ -185,7 +188,8 @@ export default function ProfilePage() {
                     setFormData({ ...formData, name: e.target.value })
                   }
                   onBlur={(e) => handleAutoSave("name", e.target.value)}
-                  placeholder="Enter your full name"
+                  placeholder="Tu nombre"
+                  className="h-12 bg-white/5 border border-white/[0.1] text-white placeholder:text-white/30 rounded-xl focus:border-white/30 focus:ring-0"
                 />
               </div>
 
@@ -193,9 +197,9 @@ export default function ProfilePage() {
               <div className="space-y-2">
                 <Label
                   htmlFor="phone"
-                  className="flex items-center gap-2 text-sm"
+                  className="flex items-center gap-2 text-sm text-white/70"
                 >
-                  Phone Number
+                  Teléfono
                 </Label>
                 <Input
                   id="phone"
@@ -206,6 +210,7 @@ export default function ProfilePage() {
                   }
                   onBlur={(e) => handleAutoSave("phone", e.target.value)}
                   placeholder="+1 (555) 123-4567"
+                  className="h-12 bg-white/5 border border-white/[0.1] text-white placeholder:text-white/30 rounded-xl focus:border-white/30 focus:ring-0"
                 />
               </div>
 
@@ -213,9 +218,9 @@ export default function ProfilePage() {
               <div className="space-y-2">
                 <Label
                   htmlFor="image"
-                  className="flex items-center gap-2 text-sm"
+                  className="flex items-center gap-2 text-sm text-white/70"
                 >
-                  Profile Picture
+                  Foto de perfil
                 </Label>
                 <Input
                   id="image"
@@ -226,6 +231,7 @@ export default function ProfilePage() {
                   }
                   onBlur={(e) => handleAutoSave("image", e.target.value)}
                   placeholder="https://example.com/avatar.jpg"
+                  className="h-12 bg-white/5 border border-white/[0.1] text-white placeholder:text-white/30 rounded-xl focus:border-white/30 focus:ring-0"
                 />
               </div>
             </div>
@@ -233,28 +239,39 @@ export default function ProfilePage() {
         </Card>
 
         {/* Info Card */}
-        <Card className="mt-6">
+        <Card 
+          className="mt-6 border-0"
+          style={{
+            background: "rgba(255, 255, 255, 0.03)",
+            border: "1px solid rgba(255, 255, 255, 0.06)",
+          }}
+        >
           <CardContent className="pt-6 flex flex-col gap-6">
             <div className="flex flex-col items-start gap-2">
-              <Label className="text-sm">Joined on</Label>
-              <span>
-                {new Date(currentUser._creationTime).toLocaleDateString()}
+              <Label className="text-sm text-white/70">Miembro desde</Label>
+              <span className="text-white">
+                {new Date(currentUser._creationTime).toLocaleDateString("es-ES", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
               </span>
             </div>
             <div className="flex flex-col items-start gap-2">
-              <Label className="text-sm">User ID</Label>
+              <Label className="text-sm text-white/70">ID de usuario</Label>
               <div className="flex items-center gap-2">
-                <pre className="font-mono rounded text-sm">
+                <pre className="font-mono rounded text-sm text-white/60 bg-white/5 px-3 py-1.5 rounded-lg">
                   {currentUser._id}
                 </pre>
                 <Button
                   size="icon"
                   variant="ghost"
+                  className="text-white/40 hover:text-white hover:bg-white/5"
                   onClick={() => {
                     navigator.clipboard.writeText(currentUser._id);
-                    toast.success("User ID copied to clipboard");
+                    toast.success("ID copiado");
                   }}
-                  title="Copy User ID"
+                  title="Copiar ID"
                 >
                   <Copy className="size-4" />
                 </Button>

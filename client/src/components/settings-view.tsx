@@ -47,7 +47,6 @@ import {
   UserPlus,
   Trash2,
   Crown,
-  Edit2,
   Mail,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -59,13 +58,15 @@ interface SettingsViewProps {
   onDelete: () => void;
 }
 
-const roleLabels = {
+type MemberRole = "owner" | "editor" | "viewer";
+
+const roleLabels: Record<MemberRole, string> = {
   owner: "Propietario",
   editor: "Editor",
   viewer: "Viewer",
 };
 
-const roleColors = {
+const roleColors: Record<MemberRole, string> = {
   owner: "bg-[#8B5CF6]/20 text-[#8B5CF6] border-[#8B5CF6]/50",
   editor: "bg-[#3B82F6]/20 text-[#3B82F6] border-[#3B82F6]/50",
   viewer: "bg-[#27272A] text-[#A1A1AA] border-[#3F3F46]",
@@ -77,14 +78,17 @@ export function SettingsView({ workspaceId, workspace, onDelete }: SettingsViewP
   const [inviteRole, setInviteRole] = useState<"editor" | "viewer">("editor");
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const members = useQuery(api.workspaces.getWorkspaceMembers, { workspaceId });
-  const pendingInvitations = useQuery(api.workspaces.getPendingInvitations, { workspaceId });
+  const membersData = useQuery(api.workspaces.getWorkspaceMembers, { workspaceId });
+  const pendingInvitations = useQuery(
+    api.workspaces.getPendingInvitations,
+    workspace.role === "owner" ? { workspaceId } : "skip"
+  );
   const updateWorkspace = useMutation(api.workspaces.updateWorkspace);
-  const inviteMember = useMutation(api.workspaces.inviteMember);
+  const inviteToWorkspace = useMutation(api.workspaces.inviteToWorkspace);
   const updateMemberRole = useMutation(api.workspaces.updateMemberRole);
-  const removeMember = useMutation(api.workspaces.removeMember);
+  const removeMemberMutation = useMutation(api.workspaces.removeMember);
   const cancelInvitation = useMutation(api.workspaces.cancelInvitation);
-  const deleteWorkspace = useMutation(api.workspaces.deleteWorkspace);
+  const deleteWorkspaceMutation = useMutation(api.workspaces.deleteWorkspace);
 
   const [workspaceData, setWorkspaceData] = useState({
     name: workspace.name,
@@ -124,7 +128,7 @@ export function SettingsView({ workspaceId, workspace, onDelete }: SettingsViewP
     }
 
     try {
-      await inviteMember({
+      await inviteToWorkspace({
         workspaceId,
         email: inviteEmail.trim().toLowerCase(),
         role: inviteRole,
@@ -137,18 +141,18 @@ export function SettingsView({ workspaceId, workspace, onDelete }: SettingsViewP
     }
   };
 
-  const handleUpdateRole = async (memberId: Id<"workspaceMembers">, newRole: "editor" | "viewer") => {
+  const handleUpdateRole = async (userId: Id<"users">, newRole: "editor" | "viewer") => {
     try {
-      await updateMemberRole({ memberId, role: newRole });
+      await updateMemberRole({ workspaceId, userId, role: newRole });
       toast.success("Rol actualizado");
     } catch (error) {
       toast.error("Error al actualizar rol");
     }
   };
 
-  const handleRemoveMember = async (memberId: Id<"workspaceMembers">) => {
+  const handleRemoveMember = async (userId: Id<"users">) => {
     try {
-      await removeMember({ memberId });
+      await removeMemberMutation({ workspaceId, userId });
       toast.success("Miembro eliminado");
     } catch (error) {
       toast.error("Error al eliminar miembro");
@@ -166,7 +170,7 @@ export function SettingsView({ workspaceId, workspace, onDelete }: SettingsViewP
 
   const handleDeleteWorkspace = async () => {
     try {
-      await deleteWorkspace({ workspaceId });
+      await deleteWorkspaceMutation({ workspaceId });
       toast.success("Workspace eliminado");
       onDelete();
     } catch (error) {
@@ -175,12 +179,12 @@ export function SettingsView({ workspaceId, workspace, onDelete }: SettingsViewP
   };
 
   return (
-    <div className="p-6 h-full overflow-hidden flex flex-col">
-      <div className="mb-6">
+    <div className="p-8 h-full overflow-hidden flex flex-col">
+      <div className="mb-8">
         <h2 className="text-2xl font-semibold text-white tracking-tight">
           Configuración del Workspace
         </h2>
-        <p className="text-sm text-[#A1A1AA] mt-1">
+        <p className="text-sm text-white/40 mt-1">
           Gestiona la información y los miembros del workspace
         </p>
       </div>
@@ -188,32 +192,38 @@ export function SettingsView({ workspaceId, workspace, onDelete }: SettingsViewP
       <ScrollArea className="flex-1">
         <div className="space-y-6 pb-6 max-w-2xl">
           {/* General Settings */}
-          <Card className="bg-[#18181B] border-[#27272A]">
+          <Card 
+            className="border-0"
+            style={{
+              background: "rgba(255, 255, 255, 0.03)",
+              border: "1px solid rgba(255, 255, 255, 0.06)",
+            }}
+          >
             <CardHeader>
               <CardTitle className="text-white text-base flex items-center gap-2">
                 <Settings className="size-4" />
                 Información general
               </CardTitle>
-              <CardDescription className="text-[#A1A1AA]">
+              <CardDescription className="text-white/40">
                 Actualiza el nombre, nicho y descripción del workspace
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-white">Nombre del workspace</Label>
+                <Label className="text-white/70 text-sm">Nombre del workspace</Label>
                 <Input
                   value={workspaceData.name}
                   onChange={(e) => setWorkspaceData({ ...workspaceData, name: e.target.value })}
-                  className="bg-[#27272A] border-[#3F3F46] text-white"
+                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                   disabled={!isOwner}
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-white">Nicho</Label>
+                <Label className="text-white/70 text-sm">Nicho</Label>
                 <Input
                   value={workspaceData.niche}
                   onChange={(e) => setWorkspaceData({ ...workspaceData, niche: e.target.value })}
-                  className="bg-[#27272A] border-[#3F3F46] text-white"
+                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-[#8B5CF6]/50"
                   disabled={!isOwner}
                 />
               </div>
@@ -299,35 +309,56 @@ export function SettingsView({ workspaceId, workspace, onDelete }: SettingsViewP
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {members?.map((member) => (
+              {/* Owner */}
+              {membersData?.owner && (
                 <div
-                  key={member._id}
                   className="flex items-center justify-between p-3 rounded-lg bg-[#0A0A0A] border border-[#27272A]"
                 >
                   <div className="flex items-center gap-3">
                     <div className="h-9 w-9 rounded-full bg-[#27272A] flex items-center justify-center text-sm font-medium text-white">
-                      {member.user?.name?.slice(0, 1).toUpperCase() ||
-                        member.user?.email?.slice(0, 1).toUpperCase() ||
+                      {membersData.owner.name?.slice(0, 1).toUpperCase() ||
+                        membersData.owner.email?.slice(0, 1).toUpperCase() ||
                         "?"}
                     </div>
                     <div>
                       <p className="text-sm text-white font-medium">
-                        {member.user?.name || member.user?.email || "Usuario"}
+                        {membersData.owner.name || membersData.owner.email || "Usuario"}
                       </p>
-                      <p className="text-xs text-[#A1A1AA]">{member.user?.email}</p>
+                      <p className="text-xs text-[#A1A1AA]">{membersData.owner.email}</p>
+                    </div>
+                  </div>
+                  <Badge className={cn("border", roleColors.owner)}>
+                    <Crown className="size-3 mr-1" />
+                    {roleLabels.owner}
+                  </Badge>
+                </div>
+              )}
+
+              {/* Members */}
+              {membersData?.members.map((member) => (
+                <div
+                  key={member.userId}
+                  className="flex items-center justify-between p-3 rounded-lg bg-[#0A0A0A] border border-[#27272A]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-[#27272A] flex items-center justify-center text-sm font-medium text-white">
+                      {member.name?.slice(0, 1).toUpperCase() ||
+                        member.email?.slice(0, 1).toUpperCase() ||
+                        "?"}
+                    </div>
+                    <div>
+                      <p className="text-sm text-white font-medium">
+                        {member.name || member.email || "Usuario"}
+                      </p>
+                      <p className="text-xs text-[#A1A1AA]">{member.email}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {member.role === "owner" ? (
-                      <Badge className={cn("border", roleColors.owner)}>
-                        <Crown className="size-3 mr-1" />
-                        {roleLabels.owner}
-                      </Badge>
-                    ) : isOwner ? (
+                    {isOwner ? (
                       <Select
                         value={member.role}
-                        onValueChange={(v) => handleUpdateRole(member._id, v as "editor" | "viewer")}
+                        onValueChange={(v) => handleUpdateRole(member.userId, v as "editor" | "viewer")}
                       >
                         <SelectTrigger className="w-28 h-8 bg-[#27272A] border-[#3F3F46] text-white text-xs">
                           <SelectValue />
@@ -338,17 +369,17 @@ export function SettingsView({ workspaceId, workspace, onDelete }: SettingsViewP
                         </SelectContent>
                       </Select>
                     ) : (
-                      <Badge className={cn("border", roleColors[member.role as keyof typeof roleColors])}>
-                        {roleLabels[member.role as keyof typeof roleLabels]}
+                      <Badge className={cn("border", roleColors[member.role as MemberRole])}>
+                        {roleLabels[member.role as MemberRole]}
                       </Badge>
                     )}
 
-                    {isOwner && member.role !== "owner" && (
+                    {isOwner && (
                       <Button
                         variant="ghost"
                         size="icon"
                         className="text-[#A1A1AA] hover:text-red-400"
-                        onClick={() => handleRemoveMember(member._id)}
+                        onClick={() => handleRemoveMember(member.userId)}
                       >
                         <Trash2 className="size-4" />
                       </Button>
