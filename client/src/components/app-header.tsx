@@ -19,15 +19,22 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Search,
   Bell,
   Plus,
   ChevronDown,
   Check,
+  CheckCircle,
+  X,
+  Users,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 
 
 interface AppHeaderProps {
@@ -52,6 +59,15 @@ export function AppHeader({
   const workspaces = useQuery(api.workspaces.listMyWorkspaces);
   const currentUser = useQuery(api.users.me);
   const createWorkspace = useMutation(api.workspaces.createWorkspace);
+
+  // Notifications
+  const notifications = useQuery(api.notifications.getMyNotifications, { limit: 20 });
+  const unreadCount = useQuery(api.notifications.getUnreadCount);
+  const pendingInvitations = useQuery(api.workspaces.getMyPendingInvitations);
+  const markAsRead = useMutation(api.notifications.markAsRead);
+  const markAllAsRead = useMutation(api.notifications.markAllAsRead);
+  const acceptInvitation = useMutation(api.workspaces.acceptInvitation);
+  const declineInvitation = useMutation(api.workspaces.declineInvitation);
 
   const allWorkspaces = [
     ...(workspaces?.owned || []),
@@ -109,6 +125,35 @@ export function AppHeader({
       colors.length;
     return colors[index];
   };
+
+  const handleAcceptInvitation = async (invitationId: Id<"workspaceInvitations">) => {
+    try {
+      await acceptInvitation({ invitationId });
+      toast.success("Invitación aceptada");
+    } catch {
+      toast.error("Error al aceptar invitación");
+    }
+  };
+
+  const handleDeclineInvitation = async (invitationId: Id<"workspaceInvitations">) => {
+    try {
+      await declineInvitation({ invitationId });
+      toast.success("Invitación rechazada");
+    } catch {
+      toast.error("Error al rechazar invitación");
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllAsRead({});
+      toast.success("Notificaciones marcadas como leídas");
+    } catch {
+      toast.error("Error al marcar notificaciones");
+    }
+  };
+
+  const totalUnread = (unreadCount ?? 0) + (pendingInvitations?.length ?? 0);
 
   return (
     <header
@@ -211,19 +256,144 @@ export function AppHeader({
 
       {/* Right: Actions */}
       <div className="flex items-center gap-4">
-        {/* Notifications */}
-        <motion.button
-          className="relative h-10 w-10 rounded-xl flex items-center justify-center text-[#6B6B78] hover:text-white transition-colors"
-          style={{ background: "rgba(255, 255, 255, 0.05)" }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Bell className="size-5" strokeWidth={2} />
-          <span
-            className="absolute top-2 right-2 h-2 w-2 rounded-full"
-            style={{ background: "#EF4444" }}
-          />
-        </motion.button>
+        {/* Notifications Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <motion.button
+              className="relative h-10 w-10 rounded-xl flex items-center justify-center text-[#6B6B78] hover:text-white transition-colors"
+              style={{ background: "rgba(255, 255, 255, 0.05)" }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Bell className="size-5" strokeWidth={2} />
+              {totalUnread > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                  style={{ background: "#EF4444" }}
+                >
+                  {totalUnread > 9 ? "9+" : totalUnread}
+                </span>
+              )}
+            </motion.button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-80 border-0 p-0"
+            style={{
+              background: "rgba(30, 30, 35, 0.98)",
+              backdropFilter: "blur(20px)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+              <span className="text-sm font-medium text-white">Notificaciones</span>
+              {totalUnread > 0 && (
+                <button
+                  onClick={handleMarkAllAsRead}
+                  className="text-xs text-[#8B5CF6] hover:text-[#A78BFA] transition-colors"
+                >
+                  Marcar todas como leídas
+                </button>
+              )}
+            </div>
+
+            <ScrollArea className="max-h-80">
+              {/* Pending Invitations */}
+              {pendingInvitations && pendingInvitations.length > 0 && (
+                <div className="p-2">
+                  <p className="px-2 py-1 text-xs text-[#6B6B78] uppercase tracking-wider">
+                    Invitaciones pendientes
+                  </p>
+                  {pendingInvitations.map((inv) => (
+                    <div
+                      key={inv.invitationId}
+                      className="p-3 rounded-lg bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 mb-2"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="h-8 w-8 rounded-full bg-[#8B5CF6]/20 flex items-center justify-center flex-shrink-0">
+                          <Users className="size-4 text-[#8B5CF6]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white">
+                            <span className="font-medium">{inv.invitedBy.name || inv.invitedBy.email}</span>
+                            {" te ha invitado a "}
+                            <span className="font-medium">{inv.workspace.name}</span>
+                          </p>
+                          <p className="text-xs text-[#6B6B78] mt-1">
+                            {formatDistanceToNow(inv.createdAt, { addSuffix: true, locale: es })}
+                          </p>
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleAcceptInvitation(inv.invitationId)}
+                              className="h-7 px-3 text-xs bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
+                            >
+                              <CheckCircle className="size-3 mr-1" />
+                              Aceptar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDeclineInvitation(inv.invitationId)}
+                              className="h-7 px-3 text-xs text-[#A0A0AB] hover:text-white hover:bg-white/10"
+                            >
+                              <X className="size-3 mr-1" />
+                              Rechazar
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Other Notifications */}
+              {notifications && notifications.length > 0 && (
+                <div className="p-2">
+                  {pendingInvitations && pendingInvitations.length > 0 && (
+                    <p className="px-2 py-1 text-xs text-[#6B6B78] uppercase tracking-wider">
+                      Recientes
+                    </p>
+                  )}
+                  {notifications.map((notif) => (
+                    <DropdownMenuItem
+                      key={notif._id}
+                      onClick={() => markAsRead({ notificationId: notif._id })}
+                      className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer ${
+                        notif.read ? "opacity-60" : ""
+                      }`}
+                    >
+                      <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                        <MessageSquare className="size-4 text-[#A0A0AB]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-white font-medium">{notif.title}</p>
+                        <p className="text-xs text-[#A0A0AB] line-clamp-2">{notif.message}</p>
+                        <p className="text-xs text-[#6B6B78] mt-1">
+                          {formatDistanceToNow(notif.createdAt, { addSuffix: true, locale: es })}
+                        </p>
+                      </div>
+                      {!notif.read && (
+                        <div className="h-2 w-2 rounded-full bg-[#8B5CF6] flex-shrink-0 mt-2" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+              )}
+
+              {/* Empty State */}
+              {(!notifications || notifications.length === 0) &&
+                (!pendingInvitations || pendingInvitations.length === 0) && (
+                  <div className="p-8 text-center">
+                    <Bell className="size-8 text-[#6B6B78] mx-auto mb-2" />
+                    <p className="text-sm text-[#A0A0AB]">No tienes notificaciones</p>
+                  </div>
+                )}
+            </ScrollArea>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* New Idea Button */}
         <Button
