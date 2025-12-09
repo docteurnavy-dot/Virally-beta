@@ -6,7 +6,6 @@ import {
   Video,
   Users,
   Settings,
-  Zap,
   LogOut,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -16,6 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { VirallyLogo } from "@/components/VirallyLogo";
 
 type NavItem = {
   id: string;
@@ -68,7 +68,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
         }}
         onClick={() => onTabChange("home")}
       >
-        <Zap className="size-6 text-white" strokeWidth={1.5} />
+        <VirallyLogo size={32} variant="icon" />
       </motion.div>
 
       {/* Nav Items */}

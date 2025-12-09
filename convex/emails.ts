@@ -1,4 +1,4 @@
-"use node";
+
 
 import { v } from "convex/values";
 import { action } from "./_generated/server";
@@ -80,9 +80,9 @@ export const sendInvitationEmail = action({
     });
 
     if (!result.success) {
-      return { 
-        success: false, 
-        message: "Invitación creada pero no se pudo enviar el email. El usuario verá la invitación al iniciar sesión." 
+      return {
+        success: false,
+        message: "Invitación creada pero no se pudo enviar el email. El usuario verá la invitación al iniciar sesión."
       };
     }
 

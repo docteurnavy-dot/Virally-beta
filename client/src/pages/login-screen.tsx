@@ -9,8 +9,12 @@ import type {
   PasswordValidation,
 } from "@/hooks/use-password-validation";
 import { cn } from "@/lib/utils";
-import { CheckCircle, XCircle, Sparkles } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 import { ShaderGradientCanvas, ShaderGradient } from "@shadergradient/react";
+import { GoogleIcon } from "@/components/icons/GoogleIcon";
+import { AppleIcon } from "@/components/icons/AppleIcon";
+import { VirallyLogo } from "@/components/VirallyLogo";
+import { useAuthActions } from "@convex-dev/auth/react";
 
 function SignUpFields({
   data,
@@ -218,6 +222,8 @@ export function LoginPage() {
     handleSubmit,
   } = useLoginForm();
 
+  const { signIn } = useAuthActions();
+
   return (
     <div className="min-h-screen relative overflow-hidden bg-black">
       {/* Shader Gradient Background */}
@@ -276,13 +282,13 @@ export function LoginPage() {
         >
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <div 
+            <div
               className="h-16 w-16 rounded-2xl flex items-center justify-center animate-pulse-glow"
               style={{
                 background: "linear-gradient(135deg, rgba(86, 6, 255, 0.9), rgba(254, 137, 137, 0.7))",
               }}
             >
-              <Sparkles className="size-8 text-white" strokeWidth={1.5} />
+              <VirallyLogo size={48} variant="icon" />
             </div>
           </div>
 
@@ -353,6 +359,41 @@ export function LoginPage() {
                   : "Continuar"}
             </Button>
           </form>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-white/10" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-black px-2 text-white/40">O continúa con</span>
+            </div>
+          </div>
+
+          {/* Social Login Buttons */}
+          <div className="space-y-3">
+            <Button
+              type="button"
+              onClick={() => void signIn("google")}
+              variant="outline"
+              disabled={isLoading}
+              className="w-full h-12 rounded-2xl bg-white/5 border-white/[0.18] text-white hover:bg-white/10 hover:border-white/30 transition-all duration-300"
+            >
+              <GoogleIcon className="mr-2 h-5 w-5" />
+              Google
+            </Button>
+
+            <Button
+              type="button"
+              onClick={() => void signIn("apple")}
+              variant="outline"
+              disabled={isLoading}
+              className="w-full h-12 rounded-2xl bg-white/5 border-white/[0.18] text-white hover:bg-white/10 hover:border-white/30 transition-all duration-300"
+            >
+              <AppleIcon className="mr-2 h-5 w-5" />
+              Apple
+            </Button>
+          </div>
 
           {/* Toggle */}
           <div className="text-center mt-6">

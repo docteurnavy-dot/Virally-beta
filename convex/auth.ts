@@ -1,5 +1,7 @@
 import { convexAuth, getAuthUserId } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
+import Google from "@auth/core/providers/google";
+import Apple from "@auth/core/providers/apple";
 import {
   MutationCtx,
   query,
@@ -22,8 +24,9 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Password({
       profile(params) {
+        // FIX: Normalizar email a lowercase para consistencia
         return {
-          email: params.email as string,
+          email: (params.email as string).toLowerCase().trim(),
           name: params.name as string,
         };
       },
@@ -38,6 +41,14 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           throw new Error("Password must contain at least one number");
         }
       },
+    }),
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+    }),
+    Apple({
+      clientId: process.env.AUTH_APPLE_ID!,
+      clientSecret: process.env.AUTH_APPLE_SECRET!,
     }),
   ],
   callbacks: {

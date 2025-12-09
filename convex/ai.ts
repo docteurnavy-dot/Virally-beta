@@ -1,4 +1,4 @@
-"use node";
+
 
 import { v } from "convex/values";
 import { action } from "./_generated/server";
@@ -51,7 +51,7 @@ export const chat = action({
   returns: v.string(),
   handler: async (ctx, args): Promise<string> => {
     const contextType = args.context ?? "general";
-    
+
     // Get workspace info
     const workspace = await ctx.runQuery(api.workspaces.getWorkspace, {
       workspaceId: args.workspaceId,
@@ -73,7 +73,7 @@ export const chat = action({
     const ideasSummary = ideas.slice(0, 10).map(i => `- ${i.title} (${i.viralScore})`).join("\n") || "Sin ideas aún";
     const scriptsSummary = scripts.slice(0, 10).map(s => `- ${s.title} (${s.status})`).join("\n") || "Sin guiones aún";
     const eventsSummary = events.slice(0, 10).map(e => `- ${e.title} el ${e.date}`).join("\n") || "Sin eventos aún";
-    
+
     const conversationHistory = messages
       .map((m) => `${m.role === "user" ? "Usuario" : "Virally"}: ${m.content}`)
       .join("\n");
@@ -166,12 +166,12 @@ ${conversationHistory}`;
 
     // Try to parse and execute actions from the response
     const parsed = extractJSON(aiResponse);
-    
+
     if (parsed && parsed.action) {
       try {
         if (parsed.action === "create_events" && Array.isArray(parsed.events)) {
           let createdCount = 0;
-          for (const event of parsed.events as Array<{title?: string; date?: string; type?: string; description?: string}>) {
+          for (const event of parsed.events as Array<{ title?: string; date?: string; type?: string; description?: string }>) {
             if (!event.title || !event.date) continue;
             await ctx.runMutation(api.calendar.createEvent, {
               workspaceId: args.workspaceId,
@@ -193,10 +193,10 @@ ${conversationHistory}`;
             return successMsg;
           }
         }
-        
+
         if (parsed.action === "create_ideas" && Array.isArray(parsed.ideas)) {
           let createdCount = 0;
-          for (const idea of parsed.ideas as Array<{title?: string; description?: string; category?: string}>) {
+          for (const idea of parsed.ideas as Array<{ title?: string; description?: string; category?: string }>) {
             if (!idea.title) continue;
             await ctx.runMutation(api.ideas.createIdea, {
               workspaceId: args.workspaceId,
@@ -218,10 +218,10 @@ ${conversationHistory}`;
             return successMsg;
           }
         }
-        
+
         if (parsed.action === "create_scripts" && Array.isArray(parsed.scripts)) {
           let createdCount = 0;
-          for (const script of parsed.scripts as Array<{title?: string; hook?: string; content?: string; cta?: string}>) {
+          for (const script of parsed.scripts as Array<{ title?: string; hook?: string; content?: string; cta?: string }>) {
             if (!script.title) continue;
             await ctx.runMutation(api.scripts.createScript, {
               workspaceId: args.workspaceId,

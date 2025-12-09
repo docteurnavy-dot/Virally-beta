@@ -5,8 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { useAction } from "convex/react";
+import { api } from "@/convex/_generated/api";
+
 // Step 1: The "Identity Link"
 const StepIdentity = ({ onNext, data, updateData }: any) => {
+    const analyzeBrand = useAction(api.onboarding.analyzeBrand);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleAnalyze = async () => {
+        if (!data.url) return;
+        setIsLoading(true);
+        try {
+            const result = await analyzeBrand({ url: data.url });
+            updateData({ ...result });
+            onNext();
+        } catch (error) {
+            console.error("Error analyzing:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -42,11 +62,12 @@ const StepIdentity = ({ onNext, data, updateData }: any) => {
                 </div>
 
                 <Button
-                    onClick={onNext}
+                    onClick={handleAnalyze}
+                    disabled={isLoading || !data.url}
                     className="w-full h-12 text-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all shadow-lg shadow-purple-500/20"
                 >
                     <Sparkles className="mr-2 size-5" />
-                    Analizar Identidad
+                    {isLoading ? "Analizando..." : "Analizar Identidad"}
                 </Button>
             </div>
         </motion.div>

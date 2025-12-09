@@ -1,4 +1,4 @@
-"use node";
+
 
 import { v } from "convex/values";
 import { action } from "./_generated/server";
@@ -8,7 +8,7 @@ export const analyzeBrand = action({
     args: {
         url: v.string(),
     },
-    handler: async (ctx, args) => {
+    handler: async (_ctx, args) => {
         // In a real production app, we would:
         // 1. Use Firecrawl/Apify to scrape the URL
         // 2. Feed the text content to GPT-4

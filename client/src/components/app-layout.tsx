@@ -143,7 +143,7 @@ export function AppLayout() {
         <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col" style={{ background: "#0A0A0D" }}>
+        <div className="flex-1 flex flex-col bg-black/20 backdrop-blur-sm">
           {/* Header - 80px */}
           <AppHeader
             selectedWorkspaceId={selectedWorkspaceId}
@@ -156,7 +156,6 @@ export function AppLayout() {
             <motion.main
               key={activeTab}
               className="flex-1 overflow-auto"
-              style={{ background: "#0A0A0D" }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
