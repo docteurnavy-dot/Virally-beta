@@ -15,6 +15,7 @@ import AdminPage from "./pages/admin";
 import { LoadingLoginScreen } from "./pages/loading-login-screen";
 import NotFound from "./pages/not-found";
 import ProfilePage from "./pages/profile";
+import OnboardingPage from "./pages/onboarding";
 
 function AuthenticatedRouter() {
   const currentUser = useQuery(api.users.me);
@@ -34,6 +35,7 @@ function AuthenticatedRouter() {
 
         {/* Profile page - accessible to all authenticated users */}
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
 
         {/* Admin route - only accessible to admins */}
         <Route

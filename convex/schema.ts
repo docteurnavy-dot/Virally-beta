@@ -17,6 +17,19 @@ export default defineSchema({
     name: v.string(),
     description: v.optional(v.string()),
     niche: v.string(),
+    // Brand DNA (The "Know Me" Layer)
+    brandPolicy: v.optional(v.object({
+      tone: v.string(), // e.g., "Sarcástico y educativo"
+      audience: v.string(), // Descripción detallada del avatar
+      contentPillars: v.array(v.string()), // Temas clave
+      visualStyle: v.string(), // "Dark minimal", "Colorful", etc.
+      websiteUrl: v.optional(v.string()),
+      socialHandles: v.optional(v.object({
+        instagram: v.optional(v.string()),
+        tiktok: v.optional(v.string()),
+        youtube: v.optional(v.string()),
+      })),
+    })),
     ownerId: v.id("users"),
     createdAt: v.number(),
     updatedAt: v.number(),
