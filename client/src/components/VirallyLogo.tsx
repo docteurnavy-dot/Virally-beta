@@ -55,11 +55,11 @@ export function VirallyLogo({
               x2="100%"
               y2="100%"
             >
-              <stop offset="0%" stopColor="#A78BFA" />
-              <stop offset="100%" stopColor="#FCA5A5" />
+              <stop offset="0%" stopColor="#FFFFFF" />
+              <stop offset="100%" stopColor="#F0F0F0" />
             </linearGradient>
             <filter id={glowId}>
-              <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+              <feGaussianBlur stdDeviation="4" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
                 <feMergeNode in="SourceGraphic" />
@@ -176,11 +176,11 @@ export function VirallyLogo({
     >
       <defs>
         <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#A78BFA" />
-          <stop offset="100%" stopColor="#FCA5A5" />
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="100%" stopColor="#F0F0F0" />
         </linearGradient>
         <filter id={glowId}>
-          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+          <feGaussianBlur stdDeviation="4" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
